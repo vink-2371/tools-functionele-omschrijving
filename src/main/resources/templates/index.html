@@ -9,15 +9,11 @@
 <body>
     <div class="form-container">
         <div class="form-header">
-            <div class="brand-logo">
-                <div class="logo-mark">
-                    <div class="logo-vink">VINK</div>
-                    <div class="logo-subtitle">INSTALLATIE GROEP</div>
-                    <div class="logo-dot"></div>
-                </div>
+            <div class="logo-container">
+                <img src="/images/vink-logo.png" alt="vink-logo" style="width:120px;height:100px">
             </div>
-            <h1 class="form-title">Onderzoek Formulier</h1>
-            <p class="form-subtitle">Uw mening is belangrijk voor ons</p>
+            <h1 class="form-title">Functionele Omschrijving</h1>
+            <p class="form-subtitle">Volgens de Vink standaard concepten</p>
         </div>
 
         <div class="form-content">
@@ -32,21 +28,41 @@
             <form id="dynamicForm">
                 <!-- Section 1: Initial Question -->
                 <div class="form-section" id="section1">
-                    <div class="form-group">
-                        <label class="form-label">Wat is uw primaire interesse gebied?</label>
-                        <div class="radio-group">
-                            <label class="radio-option">
-                                <input type="radio" name="interest" value="technologie" onchange="handleInterestChange()">
-                                Technologie & Innovatie
-                            </label>
-                            <label class="radio-option">
-                                <input type="radio" name="interest" value="duurzaamheid" onchange="handleInterestChange()">
-                                Duurzaamheid & Milieu
-                            </label>
-                            <label class="radio-option">
-                                <input type="radio" name="interest" value="comfort" onchange="handleInterestChange()">
-                                Comfort & Werkklimaat
-                            </label>
+                    <div class="form-section" id="section1">
+                        <div class="form-group">
+                            <label class="form-label">Project naam:</label>
+                            <input type="text" class="form-input" id="project-naam" name="project-naam" placeholder="Voer de projectnaam in">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Project nummer:</label>
+                            <input type="text" class="form-input" id="project-nummer" name="project-nummer" placeholder="Voer het projectnummer in">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Afbeelding:</label>
+                            <div class="file-upload">
+                                <div class="file-upload-container">
+                                    <div class="upload-icon">📁</div>
+                                    <input type="file" class="file-input" id="project-afbeelding" name="project-afbeelding" accept="image/*" onchange="handleFileUpload(this)">
+                                </div>
+                                <div class="file-upload-display" onclick="document.getElementById('project-afbeelding').click()">
+                                    <div class="upload-text">Klik om een afbeelding te uploaden</div>
+                                    <div class="upload-subtext">JPG, PNG, GIF - Max 5MB</div>
+                                </div>
+                                <div class="file-preview" id="file-preview" style="display: none;">
+                                    <img id="preview-image" src="" alt="Preview">
+                                    <div class="file-info">
+                                        <span id="file-name"></span>
+                                        <button type="button" class="remove-file" onclick="removeFile()">×</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Omschrijving:</label>
+                            <textarea class="form-input" id="project-omschrijving" name="project-omschrijving" rows="6" placeholder="Geef een uitgebreide beschrijving van het project..."></textarea>
                         </div>
                     </div>
                 </div>
