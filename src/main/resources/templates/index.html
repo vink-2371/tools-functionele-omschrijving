@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Responsive Form</title>
+    <link rel="stylesheet" href="/form-style.css">
+</head>
+<body>
+    <div class="form-container">
+        <h1 class="form-title">Survey Form</h1>
+        
+        <div class="progress-bar">
+            <div class="progress-fill" id="progressBar"></div>
+        </div>
+
+        <form id="dynamicForm">
+            <!-- Section 1: Initial Question -->
+            <div class="form-section" id="section1">
+                <div class="form-group">
+                    <label class="form-label">What's your primary interest?</label>
+                    <div class="radio-group">
+                        <label class="radio-option">
+                            <input type="radio" name="interest" value="technology" onchange="handleInterestChange()">
+                            Technology
+                        </label>
+                        <label class="radio-option">
+                            <input type="radio" name="interest" value="business" onchange="handleInterestChange()">
+                            Business
+                        </label>
+                        <label class="radio-option">
+                            <input type="radio" name="interest" value="creative" onchange="handleInterestChange()">
+                            Creative Arts
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section 2: Technology Path -->
+            <div class="form-section hidden" id="section2-tech">
+                <div class="form-group">
+                    <label class="form-label">Which technology area interests you most?</label>
+                    <select class="form-select" name="tech_area" onchange="handleTechAreaChange()">
+                        <option value="">Select an area</option>
+                        <option value="web">Web Development</option>
+                        <option value="mobile">Mobile Development</option>
+                        <option value="ai">Artificial Intelligence</option>
+                        <option value="data">Data Science</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Section 3: Business Path -->
+            <div class="form-section hidden" id="section2-business">
+                <div class="form-group">
+                    <label class="form-label">What's your business focus?</label>
+                    <div class="checkbox-group">
+                        <label class="checkbox-option">
+                            <input type="checkbox" name="business_focus" value="startup">
+                            Startup/Entrepreneurship
+                        </label>
+                        <label class="checkbox-option">
+                            <input type="checkbox" name="business_focus" value="marketing">
+                            Marketing & Sales
+                        </label>
+                        <label class="checkbox-option">
+                            <input type="checkbox" name="business_focus" value="finance">
+                            Finance & Investment
+                        </label>
+                        <label class="checkbox-option">
+                            <input type="checkbox" name="business_focus" value="management">
+                            Management & Leadership
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section 4: Creative Path -->
+            <div class="form-section hidden" id="section2-creative">
+                <div class="form-group">
+                    <label class="form-label">Tell us about your creative interests:</label>
+                    <textarea class="form-input" name="creative_interests" rows="4" placeholder="Describe your creative passions..."></textarea>
+                </div>
+            </div>
+
+            <!-- Additional sections can be added here -->
+            <div class="form-section hidden" id="section3">
+                <div class="form-group">
+                    <label class="form-label">Your Email (Optional)</label>
+                    <input type="email" class="form-input" name="email" placeholder="your@email.com">
+                </div>
+            </div>
+
+            <div class="form-buttons">
+                <button type="button" class="btn btn-secondary" id="prevBtn" onclick="previousSection()" style="display: none;">Previous</button>
+                <button type="button" class="btn btn-primary" id="nextBtn" onclick="nextSection()">Next</button>
+                <button type="submit" class="btn btn-primary" id="submitBtn" style="display: none;">Submit</button>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        let currentSection = 1;
+        let totalSections = 1;
+
+        // Handle radio button visual feedback
+        document.querySelectorAll('input[type="radio"]').forEach(radio => {
+            radio.addEventListener('change', function() {
+                // Remove selected class from all options in the same group
+                document.querySelectorAll(`input[name="${this.name}"]`).forEach(r => {
+                    r.closest('.radio-option').classList.remove('selected');
+                });
+                // Add selected class to current option
+                this.closest('.radio-option').classList.add('selected');
+            });
+        });
+
+        // Handle checkbox visual feedback
+        document.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+            checkbox.addEventListener('change', function() {
+                if (this.checked) {
+                    this.closest('.checkbox-option').classList.add('selected');
+                } else {
+                    this.closest('.checkbox-option').classList.remove('selected');
+                }
+            });
+        });
+
+        function handleInterestChange() {
+            const selectedInterest = document.querySelector('input[name="interest"]:checked').value;
+            
+            // Hide all section 2 variants
+            document.getElementById('section2-tech').classList.add('hidden');
+            document.getElementById('section2-business').classList.add('hidden');
+            document.getElementById('section2-creative').classList.add('hidden');
+            
+            // Show appropriate section based on selection
+            if (selectedInterest === 'technology') {
+                document.getElementById('section2-tech').classList.remove('hidden');
+                totalSections = 3;
+            } else if (selectedInterest === 'business') {
+                document.getElementById('section2-business').classList.remove('hidden');
+                totalSections = 3;
+            } else if (selectedInterest === 'creative') {
+                document.getElementById('section2-creative').classList.remove('hidden');
+                totalSections = 3;
+            }
+            
+            // Show next button
+            document.getElementById('nextBtn').style.display = 'block';
+        }
+
+        function handleTechAreaChange() {
+            const selectedArea = document.querySelector('select[name="tech_area"]').value;
+            if (selectedArea) {
+                // You can add more conditional logic here based on tech area
+                document.getElementById('nextBtn').style.display = 'block';
+            }
+        }
+
+        function nextSection() {
+            if (currentSection < totalSections) {
+                // Hide current section
+                document.getElementById(`section${currentSection}`).classList.add('hidden');
+                
+                // Show next section
+                currentSection++;
+                const nextSectionId = currentSection === 2 ? getActiveSection2() : `section${currentSection}`;
+                document.getElementById(nextSectionId).classList.remove('hidden');
+                
+                // Update buttons
+                document.getElementById('prevBtn').style.display = 'block';
+                
+                if (currentSection === totalSections) {
+                    document.getElementById('nextBtn').style.display = 'none';
+                    document.getElementById('submitBtn').style.display = 'block';
+                }
+            }
+            
+            updateProgressBar();
+        }
+
+        function previousSection() {
+            if (currentSection > 1) {
+                // Hide current section
+                const currentSectionId = currentSection === 2 ? getActiveSection2() : `section${currentSection}`;
+                document.getElementById(currentSectionId).classList.add('hidden');
+                
+                // Show previous section
+                currentSection--;
+                document.getElementById(`section${currentSection}`).classList.remove('hidden');
+                
+                // Update buttons
+                if (currentSection === 1) {
+                    document.getElementById('prevBtn').style.display = 'none';
+                }
+                
+                document.getElementById('nextBtn').style.display = 'block';
+                document.getElementById('submitBtn').style.display = 'none';
+            }
+            
+            updateProgressBar();
+        }
+
+        function getActiveSection2() {
+            const selectedInterest = document.querySelector('input[name="interest"]:checked')?.value;
+            if (selectedInterest === 'technology') return 'section2-tech';
+            if (selectedInterest === 'business') return 'section2-business';
+            if (selectedInterest === 'creative') return 'section2-creative';
+            return 'section2-tech'; // fallback
+        }
+
+        function updateProgressBar() {
+            const progress = (currentSection / totalSections) * 100;
+            document.getElementById('progressBar').style.width = progress + '%';
+        }
+
+        // Form submission
+        document.getElementById('dynamicForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // Collect form data
+            const formData = new FormData(this);
+            const data = {};
+            
+            for (let [key, value] of formData.entries()) {
+                if (data[key]) {
+                    // Handle multiple values (like checkboxes)
+                    if (Array.isArray(data[key])) {
+                        data[key].push(value);
+                    } else {
+                        data[key] = [data[key], value];
+                    }
+                } else {
+                    data[key] = value;
+                }
+            }
+            
+            console.log('Form Data:', data);
+            alert('Form submitted! Check the console for data.');
+            
+            // Here you would typically send the data to your server
+            // fetch('/submit-form', {
+            //     method: 'POST',
+            //     headers: { 'Content-Type': 'application/json' },
+            //     body: JSON.stringify(data)
+            // });
+        });
+
+        // Initialize progress bar
+        updateProgressBar();
+    </script>
+</body>
+</html>
