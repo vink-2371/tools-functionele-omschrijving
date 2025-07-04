@@ -1,107 +1,134 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="nl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Responsive Form</title>
+    <title>Vink Installatie Groep - Survey</title>
     <link rel="stylesheet" href="/form-style.css">
 </head>
 <body>
     <div class="form-container">
-        <h1 class="form-title">Survey Form</h1>
-        
-        <div class="progress-bar">
-            <div class="progress-fill" id="progressBar"></div>
+        <div class="form-header">
+            <div class="brand-logo">
+                <div class="logo-mark">
+                    <div class="logo-vink">VINK</div>
+                    <div class="logo-subtitle">INSTALLATIE GROEP</div>
+                    <div class="logo-dot"></div>
+                </div>
+            </div>
+            <h1 class="form-title">Onderzoek Formulier</h1>
+            <p class="form-subtitle">Uw mening is belangrijk voor ons</p>
         </div>
 
-        <form id="dynamicForm">
-            <!-- Section 1: Initial Question -->
-            <div class="form-section" id="section1">
-                <div class="form-group">
-                    <label class="form-label">What's your primary interest?</label>
-                    <div class="radio-group">
-                        <label class="radio-option">
-                            <input type="radio" name="interest" value="technology" onchange="handleInterestChange()">
-                            Technology
-                        </label>
-                        <label class="radio-option">
-                            <input type="radio" name="interest" value="business" onchange="handleInterestChange()">
-                            Business
-                        </label>
-                        <label class="radio-option">
-                            <input type="radio" name="interest" value="creative" onchange="handleInterestChange()">
-                            Creative Arts
-                        </label>
+        <div class="form-content">
+            <div class="section-indicator" id="sectionIndicator">
+                Stap 1 van 3
+            </div>
+
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressBar"></div>
+            </div>
+
+            <form id="dynamicForm">
+                <!-- Section 1: Initial Question -->
+                <div class="form-section" id="section1">
+                    <div class="form-group">
+                        <label class="form-label">Wat is uw primaire interesse gebied?</label>
+                        <div class="radio-group">
+                            <label class="radio-option">
+                                <input type="radio" name="interest" value="technologie" onchange="handleInterestChange()">
+                                Technologie & Innovatie
+                            </label>
+                            <label class="radio-option">
+                                <input type="radio" name="interest" value="duurzaamheid" onchange="handleInterestChange()">
+                                Duurzaamheid & Milieu
+                            </label>
+                            <label class="radio-option">
+                                <input type="radio" name="interest" value="comfort" onchange="handleInterestChange()">
+                                Comfort & Werkklimaat
+                            </label>
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- Section 2: Technology Path -->
-            <div class="form-section hidden" id="section2-tech">
-                <div class="form-group">
-                    <label class="form-label">Which technology area interests you most?</label>
-                    <select class="form-select" name="tech_area" onchange="handleTechAreaChange()">
-                        <option value="">Select an area</option>
-                        <option value="web">Web Development</option>
-                        <option value="mobile">Mobile Development</option>
-                        <option value="ai">Artificial Intelligence</option>
-                        <option value="data">Data Science</option>
-                    </select>
-                </div>
-            </div>
-
-            <!-- Section 3: Business Path -->
-            <div class="form-section hidden" id="section2-business">
-                <div class="form-group">
-                    <label class="form-label">What's your business focus?</label>
-                    <div class="checkbox-group">
-                        <label class="checkbox-option">
-                            <input type="checkbox" name="business_focus" value="startup">
-                            Startup/Entrepreneurship
-                        </label>
-                        <label class="checkbox-option">
-                            <input type="checkbox" name="business_focus" value="marketing">
-                            Marketing & Sales
-                        </label>
-                        <label class="checkbox-option">
-                            <input type="checkbox" name="business_focus" value="finance">
-                            Finance & Investment
-                        </label>
-                        <label class="checkbox-option">
-                            <input type="checkbox" name="business_focus" value="management">
-                            Management & Leadership
-                        </label>
+                <!-- Section 2: Technology Path -->
+                <div class="form-section hidden" id="section2-tech">
+                    <div class="form-group">
+                        <label class="form-label">Welke technologie gebieden interesseren u het meest?</label>
+                        <div class="checkbox-group">
+                            <label class="checkbox-option">
+                                <input type="checkbox" name="tech_interest" value="smart_building">
+                                Smart Building Systemen
+                            </label>
+                            <label class="checkbox-option">
+                                <input type="checkbox" name="tech_interest" value="automation">
+                                Automatisering & Controle
+                            </label>
+                            <label class="checkbox-option">
+                                <input type="checkbox" name="tech_interest" value="iot">
+                                Internet of Things (IoT)
+                            </label>
+                            <label class="checkbox-option">
+                                <input type="checkbox" name="tech_interest" value="energy_management">
+                                Energie Management
+                            </label>
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- Section 4: Creative Path -->
-            <div class="form-section hidden" id="section2-creative">
-                <div class="form-group">
-                    <label class="form-label">Tell us about your creative interests:</label>
-                    <textarea class="form-input" name="creative_interests" rows="4" placeholder="Describe your creative passions..."></textarea>
+                <!-- Section 2: Sustainability Path -->
+                <div class="form-section hidden" id="section2-sustainability">
+                    <div class="form-group">
+                        <label class="form-label">Welke duurzaamheidsaspecten zijn voor u het belangrijkst?</label>
+                        <select class="form-select" name="sustainability_focus" onchange="handleSustainabilityChange()">
+                            <option value="">Selecteer een optie</option>
+                            <option value="energy_efficiency">Energie-efficiëntie</option>
+                            <option value="renewable_energy">Hernieuwbare energie</option>
+                            <option value="waste_reduction">Afvalvermindering</option>
+                            <option value="water_conservation">Waterbesparing</option>
+                            <option value="green_building">Groen bouwen</option>
+                        </select>
+                    </div>
                 </div>
-            </div>
 
-            <!-- Additional sections can be added here -->
-            <div class="form-section hidden" id="section3">
-                <div class="form-group">
-                    <label class="form-label">Your Email (Optional)</label>
-                    <input type="email" class="form-input" name="email" placeholder="your@email.com">
+                <!-- Section 2: Comfort Path -->
+                <div class="form-section hidden" id="section2-comfort">
+                    <div class="form-group">
+                        <label class="form-label">Beschrijf uw ideale werkklimaat:</label>
+                        <textarea class="form-input" name="comfort_description" rows="4" placeholder="Vertel ons over uw voorkeuren voor temperatuur, ventilatie, verlichting, etc..."></textarea>
+                    </div>
                 </div>
-            </div>
+
+                <!-- Section 3: Final Questions -->
+                <div class="form-section hidden" id="section3">
+                    <div class="form-group">
+                        <label class="form-label">Uw e-mailadres (optioneel)</label>
+                        <input type="email" class="form-input" name="email" placeholder="uw.naam@bedrijf.nl">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Heeft u nog aanvullende opmerkingen?</label>
+                        <textarea class="form-input" name="comments" rows="3" placeholder="Deel uw gedachten met ons..."></textarea>
+                    </div>
+                </div>
+            </form>
 
             <div class="form-buttons">
-                <button type="button" class="btn btn-secondary" id="prevBtn" onclick="previousSection()" style="display: none;">Previous</button>
-                <button type="button" class="btn btn-primary" id="nextBtn" onclick="nextSection()">Next</button>
-                <button type="submit" class="btn btn-primary" id="submitBtn" style="display: none;">Submit</button>
+                <button type="button" class="btn btn-secondary" id="prevBtn" onclick="previousSection()" style="display: none;">
+                    <span>Vorige</span>
+                </button>
+                <button type="button" class="btn btn-primary" id="nextBtn" onclick="nextSection()">
+                    <span>Volgende</span>
+                </button>
+                <button type="submit" class="btn btn-primary" id="submitBtn" onclick="submitForm()" style="display: none;">
+                    <span>Versturen</span>
+                </button>
             </div>
-        </form>
+        </div>
     </div>
 
     <script>
         let currentSection = 1;
-        let totalSections = 1;
+        let totalSections = 3;
 
         // Handle radio button visual feedback
         document.querySelectorAll('input[type="radio"]').forEach(radio => {
@@ -131,29 +158,25 @@
             
             // Hide all section 2 variants
             document.getElementById('section2-tech').classList.add('hidden');
-            document.getElementById('section2-business').classList.add('hidden');
-            document.getElementById('section2-creative').classList.add('hidden');
+            document.getElementById('section2-sustainability').classList.add('hidden');
+            document.getElementById('section2-comfort').classList.add('hidden');
             
             // Show appropriate section based on selection
-            if (selectedInterest === 'technology') {
+            if (selectedInterest === 'technologie') {
                 document.getElementById('section2-tech').classList.remove('hidden');
-                totalSections = 3;
-            } else if (selectedInterest === 'business') {
-                document.getElementById('section2-business').classList.remove('hidden');
-                totalSections = 3;
-            } else if (selectedInterest === 'creative') {
-                document.getElementById('section2-creative').classList.remove('hidden');
-                totalSections = 3;
+            } else if (selectedInterest === 'duurzaamheid') {
+                document.getElementById('section2-sustainability').classList.remove('hidden');
+            } else if (selectedInterest === 'comfort') {
+                document.getElementById('section2-comfort').classList.remove('hidden');
             }
             
             // Show next button
             document.getElementById('nextBtn').style.display = 'block';
         }
 
-        function handleTechAreaChange() {
-            const selectedArea = document.querySelector('select[name="tech_area"]').value;
-            if (selectedArea) {
-                // You can add more conditional logic here based on tech area
+        function handleSustainabilityChange() {
+            const selectedValue = document.querySelector('select[name="sustainability_focus"]').value;
+            if (selectedValue) {
                 document.getElementById('nextBtn').style.display = 'block';
             }
         }
@@ -161,12 +184,11 @@
         function nextSection() {
             if (currentSection < totalSections) {
                 // Hide current section
-                document.getElementById(`section${currentSection}`).classList.add('hidden');
+                hideCurrentSection();
                 
                 // Show next section
                 currentSection++;
-                const nextSectionId = currentSection === 2 ? getActiveSection2() : `section${currentSection}`;
-                document.getElementById(nextSectionId).classList.remove('hidden');
+                showCurrentSection();
                 
                 // Update buttons
                 document.getElementById('prevBtn').style.display = 'block';
@@ -178,17 +200,17 @@
             }
             
             updateProgressBar();
+            updateSectionIndicator();
         }
 
         function previousSection() {
             if (currentSection > 1) {
                 // Hide current section
-                const currentSectionId = currentSection === 2 ? getActiveSection2() : `section${currentSection}`;
-                document.getElementById(currentSectionId).classList.add('hidden');
+                hideCurrentSection();
                 
                 // Show previous section
                 currentSection--;
-                document.getElementById(`section${currentSection}`).classList.remove('hidden');
+                showCurrentSection();
                 
                 // Update buttons
                 if (currentSection === 1) {
@@ -200,14 +222,41 @@
             }
             
             updateProgressBar();
+            updateSectionIndicator();
+        }
+
+        function hideCurrentSection() {
+            if (currentSection === 1) {
+                document.getElementById('section1').classList.add('hidden');
+            } else if (currentSection === 2) {
+                const activeSection2 = getActiveSection2();
+                if (activeSection2) {
+                    document.getElementById(activeSection2).classList.add('hidden');
+                }
+            } else if (currentSection === 3) {
+                document.getElementById('section3').classList.add('hidden');
+            }
+        }
+
+        function showCurrentSection() {
+            if (currentSection === 1) {
+                document.getElementById('section1').classList.remove('hidden');
+            } else if (currentSection === 2) {
+                const activeSection2 = getActiveSection2();
+                if (activeSection2) {
+                    document.getElementById(activeSection2).classList.remove('hidden');
+                }
+            } else if (currentSection === 3) {
+                document.getElementById('section3').classList.remove('hidden');
+            }
         }
 
         function getActiveSection2() {
             const selectedInterest = document.querySelector('input[name="interest"]:checked')?.value;
-            if (selectedInterest === 'technology') return 'section2-tech';
-            if (selectedInterest === 'business') return 'section2-business';
-            if (selectedInterest === 'creative') return 'section2-creative';
-            return 'section2-tech'; // fallback
+            if (selectedInterest === 'technologie') return 'section2-tech';
+            if (selectedInterest === 'duurzaamheid') return 'section2-sustainability';
+            if (selectedInterest === 'comfort') return 'section2-comfort';
+            return null;
         }
 
         function updateProgressBar() {
@@ -215,12 +264,13 @@
             document.getElementById('progressBar').style.width = progress + '%';
         }
 
-        // Form submission
-        document.getElementById('dynamicForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            
+        function updateSectionIndicator() {
+            document.getElementById('sectionIndicator').textContent = `Stap ${currentSection} van ${totalSections}`;
+        }
+
+        function submitForm() {
             // Collect form data
-            const formData = new FormData(this);
+            const formData = new FormData(document.getElementById('dynamicForm'));
             const data = {};
             
             for (let [key, value] of formData.entries()) {
@@ -237,7 +287,16 @@
             }
             
             console.log('Form Data:', data);
-            alert('Form submitted! Check the console for data.');
+            
+            // Show success message
+            document.querySelector('.form-content').innerHTML = `
+                <div class="success-message">
+                    <h3>Dat voelt goed!</h3>
+                    <p>Bedankt voor uw deelname aan ons onderzoek. Uw feedback helpt ons om onze dienstverlening te verbeteren.</p>
+                    <br>
+                    <p><em>Vink Installatie Groep</em></p>
+                </div>
+            `;
             
             // Here you would typically send the data to your server
             // fetch('/submit-form', {
@@ -245,10 +304,11 @@
             //     headers: { 'Content-Type': 'application/json' },
             //     body: JSON.stringify(data)
             // });
-        });
+        }
 
-        // Initialize progress bar
+        // Initialize
         updateProgressBar();
+        updateSectionIndicator();
     </script>
 </body>
 </html>
