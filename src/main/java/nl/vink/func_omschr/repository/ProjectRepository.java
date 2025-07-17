@@ -46,12 +46,12 @@ public interface ProjectRepository extends JpaRepository<Project, Long> {
     /**
      * Haalt projecten op waar nog geen document voor is gegenereerd
      */
-    List<Project> findByDocumentGenereerdFalseOrderByAangemaaktOpDesc();
+    List<Project> findByDocumentGegenereerdFalseOrderByAangemaaktOpDesc();
     
     /**
      * Haalt projecten op waar al een document voor is gegenereerd
      */
-    List<Project> findByDocumentGenereerdTrueOrderByDocumentGenereerdOpDesc();
+    List<Project> findByDocumentGegenereerdTrueOrderByDocumentGegenereerdOpDesc();
     
     /**
      * Custom query: zoek op projectnummer of naam

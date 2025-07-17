@@ -1,9 +1,15 @@
 package nl.vink.func_omschr.model;
 
-import jakarta.persistence.*;
+import java.time.LocalDateTime;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
-import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "projects")
@@ -37,7 +43,7 @@ public class Project {
     private boolean documentGegenereerd = false;
     
     @Column(name = "document_gegenereerd_op")
-    private LocalDateTime documentGenereerdOp;
+    private LocalDateTime documentGegenereerdOp;
     
     // Constructors
     public Project() {
@@ -108,12 +114,12 @@ public class Project {
         this.documentGegenereerd = documentGegenereerd;
     }
     
-    public LocalDateTime getDocumentGenereerdOp() {
-        return documentGenereerdOp;
+    public LocalDateTime getDocumentGegenereerdOp() {
+        return documentGegenereerdOp;
     }
     
-    public void setDocumentGenereerdOp(LocalDateTime documentGenereerdOp) {
-        this.documentGenereerdOp = documentGenereerdOp;
+    public void setDocumentGegenereerdOp(LocalDateTime documentGegenereerdOp) {
+        this.documentGegenereerdOp = documentGegenereerdOp;
     }
     
     // Helper methods
@@ -123,7 +129,7 @@ public class Project {
     
     public void markeerDocumentAlsGegenereerd() {
         this.documentGegenereerd = true;
-        this.documentGenereerdOp = LocalDateTime.now();
+        this.documentGegenereerdOp = LocalDateTime.now();
     }
     
     @Override

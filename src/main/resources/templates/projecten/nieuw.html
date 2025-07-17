@@ -182,7 +182,7 @@
                             <div class="form-text">
                                 <i class="fas fa-info-circle me-1"></i>
                                 Uniek projectnummer (alleen letters, cijfers, streepjes en underscores)
-                                <button type="button" class="btn btn-link btn-sm p-0 ms-2" onclick="genereersProjectNummer()">
+                                <button type="button" class="btn btn-link btn-sm p-0 ms-2" onclick="genereerdProjectNummer()">
                                     <i class="fas fa-magic me-1"></i>Genereer automatisch
                                 </button>
                             </div>
@@ -265,7 +265,7 @@
         }
         
         // Automatisch projectnummer genereren
-        function genereersProjectNummer() {
+        function genereerdProjectNummer() {
             const jaar = new Date().getFullYear();
             const maand = String(new Date().getMonth() + 1).padStart(2, '0');
             const dag = String(new Date().getDate()).padStart(2, '0');

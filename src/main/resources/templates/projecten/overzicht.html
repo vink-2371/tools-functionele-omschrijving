@@ -91,7 +91,7 @@
                     <div class="card-body">
                         <div class="d-flex justify-content-between">
                             <div>
-                                <h4 th:text="${#lists.size(#lists.select(projecten, p.documentGegenereerd))}">0</h4>
+                                <h4 th:text="${projectenMetDocument}">0</h4>
                                 <small>Documenten Klaar</small>
                             </div>
                             <i class="fas fa-file-alt fa-2x opacity-50"></i>
@@ -104,7 +104,7 @@
                     <div class="card-body">
                         <div class="d-flex justify-content-between">
                             <div>
-                                <h4 th:text="${#lists.size(#lists.select(projecten, !p.documentGegenereerd))}">0</h4>
+                                <h4 th:text="${projectenZonderDocument}">0</h4>
                                 <small>In Behandeling</small>
                             </div>
                             <i class="fas fa-clock fa-2x opacity-50"></i>

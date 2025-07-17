@@ -29,7 +29,21 @@ public class ProjectController {
     @GetMapping
     public String projectOverzicht(Model model) {
         List<Project> projecten = projectService.getAlleProjecten();
+        
+        // Tel projecten voor statistieken
+        long projectenMetDocument = projecten.stream()
+                .filter(Project::isDocumentGegenereerd)
+                .count();
+        
+        long projectenZonderDocument = projecten.stream()
+                .filter(p -> !p.isDocumentGegenereerd())
+                .count();
+        
+        // Voeg data toe aan model
         model.addAttribute("projecten", projecten);
+        model.addAttribute("projectenMetDocument", projectenMetDocument);
+        model.addAttribute("projectenZonderDocument", projectenZonderDocument);
+        
         return "projecten/overzicht";
     }
     
@@ -143,7 +157,6 @@ public class ProjectController {
         Project project = projectService.vindProjectById(id);
         
         // TODO: Hier komt later de document generatie logica
-        
         project.markeerDocumentAlsGegenereerd();
         projectService.bijwerkenProject(project);
         

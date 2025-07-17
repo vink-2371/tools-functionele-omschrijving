@@ -123,7 +123,7 @@ public class ProjectService {
      * Haalt projecten op waar nog geen document voor is gegenereerd
      */
     public List<Project> getProjectenZonderDocument() {
-        return projectRepository.findByDocumentGenereerdFalseOrderByAangemaaktOpDesc();
+        return projectRepository.findByDocumentGegenereerdFalseOrderByAangemaaktOpDesc();
     }
     
     /**
