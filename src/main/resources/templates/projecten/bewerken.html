@@ -8,20 +8,33 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
         .vink-header {
-            background: linear-gradient(135deg, #2c5aa0 0%, #1e3a8a 100%);
+            background: linear-gradient(135deg, #12785e 0%, #0f6b51 100%);
             color: white;
-            padding: 1.5rem 0;
+            padding: 1rem 0;
             margin-bottom: 2rem;
+            border-bottom: 3px solid #cccd22;
+        }
+        .navbar-brand {
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+        .vink-subtitle {
+            font-size: 0.9rem;
+            opacity: 0.9;
+            font-weight: normal;
         }
         .btn-vink {
-            background-color: #2c5aa0;
-            border-color: #2c5aa0;
+            background-color: #12785e;
+            border-color: #12785e;
             color: white;
         }
         .btn-vink:hover {
-            background-color: #1e3a8a;
-            border-color: #1e3a8a;
+            background-color: #0f6b51;
+            border-color: #0f6b51;
             color: white;
+        }
+        .btn-vink:focus {
+            box-shadow: 0 0 0 0.2rem rgba(18, 120, 94, 0.25);
         }
         .form-container {
             max-width: 600px;
@@ -29,8 +42,23 @@
         }
         .character-counter {
             font-size: 0.8rem;
-            color: #6c757d;
+            color: #9b9b9b;
             text-align: right;
+        }
+        .form-floating .form-control:focus {
+            border-color: #12785e;
+            box-shadow: 0 0 0 0.2rem rgba(18, 120, 94, 0.25);
+        }
+        .alert-info {
+            background-color: rgba(204, 205, 34, 0.1);
+            border-color: #cccd22;
+            color: #4b4b4a;
+        }
+        .text-success {
+            color: #cccd22 !important;
+        }
+        .text-warning {
+            color: #f0ad4e !important;
         }
     </style>
 </head>
@@ -41,11 +69,11 @@
         <div class="container">
             <div class="row align-items-center">
                 <div class="col-md-8">
-                    <h1 class="mb-0">
+                    <h1 class="navbar-brand mb-0">
                         <i class="fas fa-edit me-2"></i>
                         Project Bewerken
                     </h1>
-                    <p class="mb-0 opacity-75">
+                    <p class="vink-subtitle mb-0">
                         <span th:text="${project.projectNummer}">VIG-2024-001</span>
                     </p>
                 </div>
