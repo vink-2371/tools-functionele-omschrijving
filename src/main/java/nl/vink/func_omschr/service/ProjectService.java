@@ -1,5 +1,6 @@
 package nl.vink.func_omschr.service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -21,7 +22,22 @@ public class ProjectService {
      * Haalt alle projecten op, gesorteerd op aanmaakdatum (nieuwste eerst)
      */
     public List<Project> getAlleProjecten() {
-        return projectRepository.findAllByOrderByAangemaaktOpDesc();
+        try {
+            System.out.println("🔍 ProjectService.getAlleProjecten() aangeroepen");
+            List<Project> projecten = projectRepository.findAllByOrderByAangemaaktOpDesc();
+            
+            if (projecten == null) {
+                System.out.println("⚠️ Repository retourneerde null, lege lijst gemaakt");
+                projecten = new ArrayList<>();
+            }
+            
+            System.out.println("📊 Service: " + projecten.size() + " projecten gevonden");
+            return projecten;
+            
+        } catch (Exception e) {
+            System.err.println("❌ Fout bij ophalen projecten: " + e.getMessage());
+            return new ArrayList<>(); // Return lege lijst bij fout
+        }
     }
     
     /**

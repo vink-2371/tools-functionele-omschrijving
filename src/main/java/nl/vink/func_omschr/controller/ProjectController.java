@@ -1,6 +1,7 @@
 package nl.vink.func_omschr.controller;
 
 import java.security.Principal;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,7 +29,16 @@ public class ProjectController {
     // Overzichtspagina met alle projecten
     @GetMapping
     public String projectOverzicht(Model model) {
+        System.out.println("🔍 ProjectController.projectOverzicht() aangeroepen");
+        
         List<Project> projecten = projectService.getAlleProjecten();
+        System.out.println("📊 Aantal projecten opgehaald: " + (projecten != null ? projecten.size() : "NULL"));
+        
+        // Zorg ervoor dat projecten nooit null is
+        if (projecten == null) {
+            projecten = new ArrayList<>();
+            System.out.println("⚠️ Projecten was null, lege lijst aangemaakt");
+        }
         
         // Tel projecten voor statistieken
         long projectenMetDocument = projecten.stream()
@@ -39,11 +49,14 @@ public class ProjectController {
                 .filter(p -> !p.isDocumentGegenereerd())
                 .count();
         
+        System.out.println("📈 Statistieken - Met document: " + projectenMetDocument + ", Zonder document: " + projectenZonderDocument);
+        
         // Voeg data toe aan model
         model.addAttribute("projecten", projecten);
         model.addAttribute("projectenMetDocument", projectenMetDocument);
         model.addAttribute("projectenZonderDocument", projectenZonderDocument);
         
+        System.out.println("✅ Model attributes toegevoegd, naar template...");
         return "projecten/overzicht";
     }
     
