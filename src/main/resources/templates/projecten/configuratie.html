@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html lang="nl" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project Configuratie - Vink Installatie Groep</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .vink-header {
+            background: linear-gradient(135deg, #2c5aa0 0%, #1e3a8a 100%);
+            color: white;
+            padding: 1.5rem 0;
+            margin-bottom: 2rem;
+        }
+        .form-container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .btn-vink {
+            background-color: #2c5aa0;
+            border-color: #2c5aa0;
+            color: white;
+        }
+        .btn-vink:hover {
+            background-color: #1e3a8a;
+            border-color: #1e3a8a;
+            color: white;
+        }
+        .step-indicator {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 2rem;
+        }
+        .step {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: #e9ecef;
+            color: #6c757d;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 1rem;
+            font-weight: bold;
+            position: relative;
+        }
+        .step.active {
+            background-color: #2c5aa0;
+            color: white;
+        }
+        .step.completed {
+            background-color: #28a745;
+            color: white;
+        }
+        .step::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 100%;
+            width: 2rem;
+            height: 2px;
+            background-color: #e9ecef;
+            z-index: -1;
+        }
+        .step:last-child::after {
+            display: none;
+        }
+        .step.completed::after {
+            background-color: #28a745;
+        }
+        .question-card {
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+        .question-card.active {
+            border-color: #2c5aa0;
+            box-shadow: 0 0 0 0.2rem rgba(44, 90, 160, 0.25);
+        }
+        .question-card.hidden {
+            display: none;
+        }
+        .choice-btn {
+            border: 2px solid #e9ecef;
+            transition: all 0.2s ease;
+            text-align: left;
+            padding: 1rem;
+            margin-bottom: 0.5rem;
+        }
+        .choice-btn:hover {
+            border-color: #2c5aa0;
+            background-color: #f8f9ff;
+        }
+        .choice-btn.selected {
+            border-color: #2c5aa0;
+            background-color: #2c5aa0;
+            color: white;
+        }
+        .choice-btn .description {
+            font-size: 0.9rem;
+            opacity: 0.8;
+            margin-top: 0.25rem;
+        }
+        .progress-bar {
+            background-color: #2c5aa0;
+        }
+    </style>
+</head>
+<body class="bg-light">
+    
+    <!-- Header -->
+    <div class="vink-header">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h1 class="mb-0">
+                        <i class="fas fa-cogs me-2"></i>
+                        Project Configuratie
+                    </h1>
+                    <p class="mb-0 opacity-75">
+                        Stap 2: Technische Specificaties - 
+                        <span th:text="${project.projectNaam}">Project Naam</span>
+                    </p>
+                </div>
+                <div class="col-md-4 text-md-end">
+                    <span class="badge bg-light text-dark px-3 py-2">
+                        <i class="fas fa-hashtag me-1"></i>
+                        <span th:text="${project.projectNummer}">VIG-2024-001</span>
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="container">
+        <div class="form-container">
+            
+            <!-- Step Indicator -->
+            <div class="step-indicator">
+                <div class="step completed">
+                    <i class="fas fa-check"></i>
+                </div>
+                <div class="step active">
+                    <i class="fas fa-cogs"></i>
+                </div>
+                <div class="step">
+                    <i class="fas fa-file-alt"></i>
+                </div>
+            </div>
+            
+            <!-- Progress Bar -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-muted">Voortgang configuratie</span>
+                        <span id="progressText" class="text-muted">0 van 5 vragen beantwoord</span>
+                    </div>
+                    <div class="progress">
+                        <div id="progressBar" class="progress-bar" role="progressbar" style="width: 0%"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Configuratie Form -->
+            <form id="configuratieForm">
+                
+                <!-- Vraag 1: Type Installatie -->
+                <div class="card question-card mb-4 active" id="vraag1">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">
+                            <i class="fas fa-thermometer-half me-2"></i>
+                            Vraag 1: Type Klimaatinstallatie
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="card-text mb-3">Welk type klimaatinstallatie wordt er geïnstalleerd?</p>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <button type="button" class="btn choice-btn w-100" 
+                                        onclick="selectChoice('installatie_type', 'warmtepomp', this)">
+                                    <i class="fas fa-heat me-2"></i>
+                                    <strong>Warmtepomp</strong>
+                                    <div class="description">Lucht-water of bodem-water warmtepomp systeem</div>
+                                </button>
+                            </div>
+                            <div class="col-md-6">
+                                <button type="button" class="btn choice-btn w-100" 
+                                        onclick="selectChoice('installatie_type', 'vrf', this)">
+                                    <i class="fas fa-snowflake me-2"></i>
+                                    <strong>VRF Systeem</strong>
+                                    <div class="description">Variable Refrigerant Flow systeem</div>
+                                </button>
+                            </div>
+                            <div class="col-md-6">
+                                <button type="button" class="btn choice-btn w-100" 
+                                        onclick="selectChoice('installatie_type', 'hybride', this)">
+                                    <i class="fas fa-sync-alt me-2"></i>
+                                    <strong>Hybride Systeem</strong>
+                                    <div class="description">Combinatie van warmtepomp en conventionele verwarming</div>
+                                </button>
+                            </div>
+                            <div class="col-md-6">
+                                <button type="button" class="btn choice-btn w-100" 
+                                        onclick="selectChoice('installatie_type', 'overig', this)">
+                                    <i class="fas fa-cog me-2"></i>
+                                    <strong>Overig</strong>
+                                    <div class="description">Anders type klimaatinstallatie</div>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Vraag 2: Warmtepomp Type (conditioneel) -->
+                <div class="card question-card mb-4 hidden" id="vraag2_warmtepomp">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0">
+                            <i class="fas fa-heat me-2"></i>
+                            Vraag 2: Type Warmtepomp
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="card-text mb-3">Welk type warmtepomp wordt geïnstalleerd?</p>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <button type="button" class="btn choice-btn w-100" 
+                                        onclick="selectChoice('warmtepomp_type', 'lucht_water', this)">
+                                    <i class="fas fa-wind me-2"></i>
+                                    <strong>Lucht-Water</strong>
+                                    <div class="description">Haalt warmte uit buitenlucht</div>
+                                </button>
+                            </div>
+                            <div class="col-md-6">
+                                <button type="button" class="btn choice-btn w-100" 
+                                        onclick="selectChoice('warmtepomp_type', 'bodem_water', this)">
+                                    <i class="fas fa-globe me-2"></i>
+                                    <strong>Bodem-Water</strong>
+                                    <div class="description">Haalt warmte uit de bodem (geothermie)</div>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Vraag 3: Aantal Units -->
+                <div class="card question-card mb-4 hidden" id="vraag3">
+                    <div class="card-header bg-info text-white">
+                        <h5 class="mb-0">
+                            <i class="fas fa-calculator me-2"></i>
+                            Vraag 3: Aantal Units
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="card-text mb-3">Hoeveel units worden er geïnstalleerd?</p>
+                        
+                        <div class="row">
+                            <div class="col-md-3">
+                                <button type="button" class="btn choice-btn w-100" 
+                                        onclick="selectChoice('aantal_units', '1', this)">
+                                    <strong>1 Unit</strong>
+                                </button>
+                            </div>
+                            <div class="col-md-3">
+                                <button type="button" class="btn choice-btn w-100" 
+                                        onclick="selectChoice('aantal_units', '2-5', this)">
+                                    <strong>2-5 Units</strong>
+                                </button>
+                            </div>
+                            <div class="col-md-3">
+                                <button type="button" class="btn choice-btn w-100" 
+                                        onclick="selectChoice('aantal_units', '6-10', this)">
+                                    <strong>6-10 Units</strong>
+                                </button>
+                            </div>
+                            <div class="col-md-3">
+                                <button type="button" class="btn choice-btn w-100" 
+                                        onclick="selectChoice('aantal_units', '10+', this)">
+                                    <strong>10+ Units</strong>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Vraag 4: Regeltechniek Complexiteit -->
+                <div class="card question-card mb-4 hidden" id="vraag4">
+                    <div class="card-header bg-warning text-white">
+                        <h5 class="mb-0">
+                            <i class="fas fa-microchip me-2"></i>
+                            Vraag 4: Regeltechniek Complexiteit
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="card-text mb-3">Wat is de gewenste complexiteit van de regeltechniek?</p>
+                        
+                        <div class="row">
+                            <div class="col-md-4">
+                                <button type="button" class="btn choice-btn w-100" 
+                                        onclick="selectChoice('regeltechniek', 'basis', this)">
+                                    <i class="fas fa-toggle-on me-2"></i>
+                                    <strong>Basis</strong>
+                                    <div class="description">Eenvoudige aan/uit regeling</div>
+                                </button>
+                            </div>
+                            <div class="col-md-4">
+                                <button type="button" class="btn choice-btn w-100" 
+                                        onclick="selectChoice('regeltechniek', 'standaard', this)">
+                                    <i class="fas fa-sliders-h me-2"></i>
+                                    <strong>Standaard</strong>
+                                    <div class="description">Temperatuurregeling met weerscompensatie</div>
+                                </button>
+                            </div>
+                            <div class="col-md-4">
+                                <button type="button" class="btn choice-btn w-100" 
+                                        onclick="selectChoice('regeltechniek', 'geavanceerd', this)">
+                                    <i class="fas fa-brain me-2"></i>
+                                    <strong>Geavanceerd</strong>
+                                    <div class="description">Intelligente regeling met optimalisatie</div>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Vraag 5: Extra Opties -->
+                <div class="card question-card mb-4 hidden" id="vraag5">
+                    <div class="card-header bg-secondary text-white">
+                        <h5 class="mb-0">
+                            <i class="fas fa-plus-circle me-2"></i>
+                            Vraag 5: Extra Opties
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="card-text mb-3">Welke extra opties zijn gewenst? (meerdere antwoorden mogelijk)</p>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <button type="button" class="btn choice-btn w-100" 
+                                        onclick="toggleMultiChoice('extra_opties', 'koeling', this)">
+                                    <i class="fas fa-snowflake me-2"></i>
+                                    <strong>Koeling</strong>
+                                    <div class="description">Koelfunctionaliteit</div>
+                                </button>
+                            </div>
+                            <div class="col-md-6">
+                                <button type="button" class="btn choice-btn w-100" 
+                                        onclick="toggleMultiChoice('extra_opties', 'ventilatie', this)">
+                                    <i class="fas fa-fan me-2"></i>
+                                    <strong>Ventilatie</strong>
+                                    <div class="description">Gecontroleerde ventilatie</div>
+                                </button>
+                            </div>
+                            <div class="col-md-6">
+                                <button type="button" class="btn choice-btn w-100" 
+                                        onclick="toggleMultiChoice('extra_opties', 'zonnepanelen', this)">
+                                    <i class="fas fa-solar-panel me-2"></i>
+                                    <strong>Zonnepanelen</strong>
+                                    <div class="description">Integratie met PV-installatie</div>
+                                </button>
+                            </div>
+                            <div class="col-md-6">
+                                <button type="button" class="btn choice-btn w-100" 
+                                        onclick="toggleMultiChoice('extra_opties', 'batterij', this)">
+                                    <i class="fas fa-battery-three-quarters me-2"></i>
+                                    <strong>Batterijopslag</strong>
+                                    <div class="description">Energieopslag systeem</div>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Samenvatting -->
+                <div class="card question-card mb-4 hidden" id="samenvatting">
+                    <div class="card-header bg-dark text-white">
+                        <h5 class="mb-0">
+                            <i class="fas fa-check-circle me-2"></i>
+                            Samenvatting Configuratie
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <h6>Geselecteerde opties:</h6>
+                        <div id="samenvattingInhoud">
+                            <!-- Dynamisch gevuld via JavaScript -->
+                        </div>
+                        
+                        <hr>
+                        
+                        <div class="alert alert-info">
+                            <h6>
+                                <i class="fas fa-info-circle me-2"></i>
+                                Volgende stap
+                            </h6>
+                            <p class="mb-0">
+                                Op basis van jouw selecties wordt automatisch een functionele omschrijving gegenereerd 
+                                met de juiste tekstblokken voor de regeltechniek.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+            </form>
+
+            <!-- Navigation Buttons -->
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-between">
+                        <a th:href="@{/projecten/{id}/bewerken(id=${project.id})}" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left me-2"></i>
+                            Terug naar Projectgegevens
+                        </a>
+                        
+                        <div>
+                            <button type="button" id="vorigeVraagBtn" class="btn btn-outline-primary me-2" 
+                                    onclick="vorigeVraag()" style="display: none;">
+                                <i class="fas fa-chevron-left me-2"></i>
+                                Vorige
+                            </button>
+                            
+                            <button type="button" id="volgendeVraagBtn" class="btn btn-vink" 
+                                    onclick="volgendeVraag()" disabled>
+                                Volgende
+                                <i class="fas fa-chevron-right ms-2"></i>
+                            </button>
+                            
+                            <button type="button" id="documentGenererenBtn" class="btn btn-success btn-lg" 
+                                    onclick="genereersDocument()" style="display: none;">
+                                <i class="fas fa-file-download me-2"></i>
+                                Document Genereren
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Custom JavaScript voor vragenlijst logica -->
+    <script>
+        // Globale variabelen
+        let huidigeVraag = 1;
+        let maxVraag = 5;
+        let antwoorden = {};
+        let vragenVolgorde = [1, 3, 4, 5]; // Standaard volgorde, wordt dynamisch aangepast
+        
+        // Initialisatie
+        document.addEventListener('DOMContentLoaded', function() {
+            updateProgress();
+            checkNavigationButtons();
+        });
+        
+        // Selecteer een single choice antwoord
+        function selectChoice(vraagId, waarde, element) {
+            // Verwijder selected class van alle buttons in deze vraag
+            const parentCard = element.closest('.question-card');
+            parentCard.querySelectorAll('.choice-btn').forEach(btn => {
+                btn.classList.remove('selected');
+            });
+            
+            // Voeg selected class toe aan gekozen button
+            element.classList.add('selected');
+            
+            // Sla antwoord op
+            antwoorden[vraagId] = waarde;
+            
+            // Update vragenlijst logica
+            updateQuestionFlow();
+            updateProgress();
+            checkNavigationButtons();
+            
+            // Auto-advance naar volgende vraag na korte delay
+            setTimeout(() => {
+                if (document.getElementById('volgendeVraagBtn').disabled === false) {
+                    volgendeVraag();
+                }
+            }, 500);
+        }
+        
+        // Toggle multiple choice antwoord
+        function toggleMultiChoice(vraagId, waarde, element) {
+            if (!antwoorden[vraagId]) {
+                antwoorden[vraagId] = [];
+            }
+            
+            if (element.classList.contains('selected')) {
+                // Deselecteer
+                element.classList.remove('selected');
+                antwoorden[vraagId] = antwoorden[vraagId].filter(v => v !== waarde);
+            } else {
+                // Selecteer
+                element.classList.add('selected');
+                antwoorden[vraagId].push(waarde);
+            }
+            
+            updateProgress();
+            checkNavigationButtons();
+        }
+        
+        // Update vragenlogica gebaseerd op antwoorden
+        function updateQuestionFlow() {
+            // Reset vragenlijst
+            vragenVolgorde = [1, 3, 4, 5];
+            
+            // Als warmtepomp gekozen, voeg warmtepomp type vraag toe
+            if (antwoorden['installatie_type'] === 'warmtepomp') {
+                vragenVolgorde = [1, 'vraag2_warmtepomp', 3, 4, 5];
+            }
+            
+            // Verberg alle conditionele vragen eerst
+            document.getElementById('vraag2_warmtepomp').classList.add('hidden');
+            
+            // Toon relevante vragen
+            if (antwoorden['installatie_type'] === 'warmtepomp') {
+                document.getElementById('vraag2_warmtepomp').classList.remove('hidden');
+            }
+        }
+        
+        // Ga naar volgende vraag
+        function volgendeVraag() {
+            // Verberg huidige vraag
+            const huidigeVraagElement = getCurrentQuestionElement();
+            huidigeVraagElement.classList.remove('active');
+            huidigeVraagElement.classList.add('hidden');
+            
+            // Verhoog vraagnummer
+            const huidigeIndex = vragenVolgorde.indexOf(huidigeVraag === 1 ? 1 : `vraag${huidigeVraag}_warmtepomp` === `vraag${huidigeVraag}_warmtepomp` ? huidigeVraag : huidigeVraag);
+            const volgendeIndex = huidigeIndex + 1;
+            
+            if (volgendeIndex < vragenVolgorde.length) {
+                huidigeVraag = vragenVolgorde[volgendeIndex];
+                showCurrentQuestion();
+            } else {
+                // Toon samenvatting
+                showSamenvatting();
+            }
+            
+            checkNavigationButtons();
+        }
+        
+        // Ga naar vorige vraag
+        function vorigeVraag() {
+            const huidigeIndex = vragenVolgorde.indexOf(huidigeVraag);
+            const vorigeIndex = huidigeIndex - 1;
+            
+            if (vorigeIndex >= 0) {
+                // Verberg huidige vraag
+                const huidigeVraagElement = getCurrentQuestionElement();
+                huidigeVraagElement.classList.remove('active');
+                huidigeVraagElement.classList.add('hidden');
+                
+                // Verberg samenvatting als we daar waren
+                document.getElementById('samenvatting').classList.add('hidden');
+                document.getElementById('samenvatting').classList.remove('active');
+                
+                huidigeVraag = vragenVolgorde[vorigeIndex];
+                showCurrentQuestion();
+            }
+            
+            checkNavigationButtons();
+        }
+        
+        // Toon huidige vraag
+        function showCurrentQuestion() {
+            const vraagElement = getCurrentQuestionElement();
+            vraagElement.classList.remove('hidden');
+            vraagElement.classList.add('active');
+            
+            // Scroll naar vraag
+            vraagElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+        
+        // Krijg huidig vraag element
+        function getCurrentQuestionElement() {
+            if (typeof huidigeVraag === 'string') {
+                return document.getElementById(huidigeVraag);
+            } else {
+                return document.getElementById(`vraag${huidigeVraag}`);
+            }
+        }
+        
+        // Toon samenvatting
+        function showSamenvatting() {
+            document.getElementById('samenvatting').classList.remove('hidden');
+            document.getElementById('samenvatting').classList.add('active');
+            
+            // Vul samenvatting
+            const samenvattingHtml = generateSamenvatting();
+            document.getElementById('samenvattingInhoud').innerHTML = samenvattingHtml;
+            
+            // Scroll naar samenvatting
+            document.getElementById('samenvatting').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+        
+        // Genereer samenvatting HTML
+        function generateSamenvatting() {
+            let html = '<ul class="list-group list-group-flush">';
+            
+            if (antwoorden['installatie_type']) {
+                const typeLabels = {
+                    'warmtepomp': 'Warmtepomp',
+                    'vrf': 'VRF Systeem',
+                    'hybride': 'Hybride Systeem',
+                    'overig': 'Overig'
+                };
+                html += `<li class="list-group-item"><strong>Type installatie:</strong> ${typeLabels[antwoorden['installatie_type']]}</li>`;
+            }
+            
+            if (antwoorden['warmtepomp_type']) {
+                const subtypeLabels = {
+                    'lucht_water': 'Lucht-Water',
+                    'bodem_water': 'Bodem-Water (Geothermie)'
+                };
+                html += `<li class="list-group-item"><strong>Warmtepomp type:</strong> ${subtypeLabels[antwoorden['warmtepomp_type']]}</li>`;
+            }
+            
+            if (antwoorden['aantal_units']) {
+                html += `<li class="list-group-item"><strong>Aantal units:</strong> ${antwoorden['aantal_units']}</li>`;
+            }
+            
+            if (antwoorden['regeltechniek']) {
+                const regelLabels = {
+                    'basis': 'Basis regeling',
+                    'standaard': 'Standaard regeling met weerscompensatie',
+                    'geavanceerd': 'Geavanceerde regeling met optimalisatie'
+                };
+                html += `<li class="list-group-item"><strong>Regeltechniek:</strong> ${regelLabels[antwoorden['regeltechniek']]}</li>`;
+            }
+            
+            if (antwoorden['extra_opties'] && antwoorden['extra_opties'].length > 0) {
+                const optieLabels = {
+                    'koeling': 'Koeling',
+                    'ventilatie': 'Gecontroleerde ventilatie',
+                    'zonnepanelen': 'Zonnepanelen integratie',
+                    'batterij': 'Batterijopslag'
+                };
+                const opties = antwoorden['extra_opties'].map(optie => optieLabels[optie]).join(', ');
+                html += `<li class="list-group-item"><strong>Extra opties:</strong> ${opties}</li>`;
+            }
+            
+            html += '</ul>';
+            return html;
+        }
+        
+        // Update progress bar
+        function updateProgress() {
+            const totalQuestions = vragenVolgorde.length;
+            let beantwoordeVragen = 0;
+            
+            // Tel beantwoorde verplichte vragen
+            if (antwoorden['installatie_type']) beantwoordeVragen++;
+            if (antwoorden['installatie_type'] === 'warmtepomp' && antwoorden['warmtepomp_type']) beantwoordeVragen++;
+            if (antwoorden['aantal_units']) beantwoordeVragen++;
+            if (antwoorden['regeltechniek']) beantwoordeVragen++;
+            if (antwoorden['extra_opties']) beantwoordeVragen++; // Optioneel, maar tel mee
+            
+            const percentage = Math.round((beantwoordeVragen / totalQuestions) * 100);
+            
+            document.getElementById('progressBar').style.width = percentage + '%';
+            document.getElementById('progressText').textContent = `${beantwoordeVragen} van ${totalQuestions} vragen beantwoord`;
+        }
+        
+        // Controleer navigatie buttons
+        function checkNavigationButtons() {
+            const vorigeBtn = document.getElementById('vorigeVraagBtn');
+            const volgendeBtn = document.getElementById('volgendeVraagBtn');
+            const documentBtn = document.getElementById('documentGenererenBtn');
+            
+            // Vorige button
+            vorigeBtn.style.display = huidigeVraag === 1 ? 'none' : 'inline-block';
+            
+            // Controleer of huidige vraag beantwoord is
+            let huidigeVraagBeantwoord = false;
+            
+            if (huidigeVraag === 1) {
+                huidigeVraagBeantwoord = !!antwoorden['installatie_type'];
+            } else if (huidigeVraag === 'vraag2_warmtepomp') {
+                huidigeVraagBeantwoord = !!antwoorden['warmtepomp_type'];
+            } else if (huidigeVraag === 3) {
+                huidigeVraagBeantwoord = !!antwoorden['aantal_units'];
+            } else if (huidigeVraag === 4) {
+                huidigeVraagBeantwoord = !!antwoorden['regeltechniek'];
+            } else if (huidigeVraag === 5) {
+                huidigeVraagBeantwoord = true; // Extra opties zijn optioneel
+            }
+            
+            volgendeBtn.disabled = !huidigeVraagBeantwoord;
+            
+            // Check of we bij samenvatting zijn
+            const isSamenvatting = document.getElementById('samenvatting').classList.contains('active');
+            if (isSamenvatting) {
+                volgendeBtn.style.display = 'none';
+                documentBtn.style.display = 'inline-block';
+            } else {
+                volgendeBtn.style.display = 'inline-block';
+                documentBtn.style.display = 'none';
+            }
+        }
+        
+        // Genereer document
+        function genereersDocument() {
+            // Hier zou de daadwerkelijke document generatie plaatsvinden
+            // Voor nu tonen we een loading state en redirect
+            
+            const btn = document.getElementById('documentGenererenBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Document wordt gegenereerd...';
+            
+            // Simuleer document generatie (in echte implementatie: API call)
+            setTimeout(() => {
+                // Sla configuratie op (hier zou je een POST request doen)
+                console.log('Configuratie:', antwoorden);
+                
+                // Redirect naar project details of download pagina
+                window.location.href = `/projecten/${window.location.pathname.split('/')[2]}/document-genereren`;
+            }, 2000);
+        }
+    </script>
+    
+</body>
+</html>
