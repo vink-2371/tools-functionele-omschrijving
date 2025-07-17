@@ -29,35 +29,47 @@ public class ProjectController {
     // Overzichtspagina met alle projecten
     @GetMapping
     public String projectOverzicht(Model model) {
-        System.out.println("🔍 ProjectController.projectOverzicht() aangeroepen");
+        System.out.println("🔍 DEBUG: ProjectController.projectOverzicht() aangeroepen voor URL /projecten");
         
-        List<Project> projecten = projectService.getAlleProjecten();
-        System.out.println("📊 Aantal projecten opgehaald: " + (projecten != null ? projecten.size() : "NULL"));
-        
-        // Zorg ervoor dat projecten nooit null is
-        if (projecten == null) {
-            projecten = new ArrayList<>();
-            System.out.println("⚠️ Projecten was null, lege lijst aangemaakt");
+        try {
+            List<Project> projecten = projectService.getAlleProjecten();
+            System.out.println("📊 DEBUG: Aantal projecten opgehaald: " + (projecten != null ? projecten.size() : "NULL"));
+            
+            // Zorg ervoor dat projecten nooit null is
+            if (projecten == null) {
+                projecten = new ArrayList<>();
+                System.out.println("⚠️ DEBUG: Projecten was null, lege lijst aangemaakt");
+            }
+            
+            // Tel projecten voor statistieken
+            long projectenMetDocument = projecten.stream()
+                    .filter(Project::isDocumentGegenereerd)
+                    .count();
+            
+            long projectenZonderDocument = projecten.stream()
+                    .filter(p -> !p.isDocumentGegenereerd())
+                    .count();
+            
+            System.out.println("📈 DEBUG: Statistieken - Met document: " + projectenMetDocument + ", Zonder document: " + projectenZonderDocument);
+            
+            // Voeg data toe aan model
+            model.addAttribute("projecten", projecten);
+            model.addAttribute("projectenMetDocument", projectenMetDocument);
+            model.addAttribute("projectenZonderDocument", projectenZonderDocument);
+            
+            System.out.println("✅ DEBUG: Model attributes toegevoegd, naar template projecten/overzicht");
+            return "projecten/overzicht";
+            
+        } catch (Exception e) {
+            System.err.println("❌ ERROR in ProjectController.projectOverzicht(): " + e.getMessage());
+            e.printStackTrace();
+            
+            // Fallback: lege data
+            model.addAttribute("projecten", new ArrayList<>());
+            model.addAttribute("projectenMetDocument", 0L);
+            model.addAttribute("projectenZonderDocument", 0L);
+            return "projecten/overzicht";
         }
-        
-        // Tel projecten voor statistieken
-        long projectenMetDocument = projecten.stream()
-                .filter(Project::isDocumentGegenereerd)
-                .count();
-        
-        long projectenZonderDocument = projecten.stream()
-                .filter(p -> !p.isDocumentGegenereerd())
-                .count();
-        
-        System.out.println("📈 Statistieken - Met document: " + projectenMetDocument + ", Zonder document: " + projectenZonderDocument);
-        
-        // Voeg data toe aan model
-        model.addAttribute("projecten", projecten);
-        model.addAttribute("projectenMetDocument", projectenMetDocument);
-        model.addAttribute("projectenZonderDocument", projectenZonderDocument);
-        
-        System.out.println("✅ Model attributes toegevoegd, naar template...");
-        return "projecten/overzicht";
     }
     
     // Toon formulier voor nieuw project

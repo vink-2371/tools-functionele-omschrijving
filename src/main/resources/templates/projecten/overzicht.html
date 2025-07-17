@@ -13,19 +13,6 @@
             padding: 1.5rem 0;
             margin-bottom: 2rem;
         }
-        .project-card {
-            transition: transform 0.2s, box-shadow 0.2s;
-            border: none;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        .project-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-        }
-        .status-badge {
-            font-size: 0.75rem;
-            padding: 0.25rem 0.5rem;
-        }
         .btn-vink {
             background-color: #2c5aa0;
             border-color: #2c5aa0;
@@ -67,24 +54,16 @@
         <!-- DEBUG INFO (tijdelijk) -->
         <div class="alert alert-info" style="font-family: monospace;">
             <strong>🔍 DEBUG INFO:</strong><br>
-            Projecten object: <span th:text="${projecten}">null</span><br>
-            Projecten type: <span th:text="${projecten?.class?.simpleName}">unknown</span><br>
-            Projecten size: <span th:text="${projecten != null ? #lists.size(projecten) : 'NULL'}">unknown</span><br>
-            Met document: <span th:text="${projectenMetDocument}">unknown</span><br>
-            Zonder document: <span th:text="${projectenZonderDocument}">unknown</span>
+            Projecten is null: <span th:text="${projecten == null}">unknown</span><br>
+            Projecten size: <span th:text="${projecten != null ? projecten.size() : 'NULL'}">unknown</span><br>
+            Met document: <span th:text="${projectenMetDocument != null ? projectenMetDocument : 'NULL'}">unknown</span><br>
+            Zonder document: <span th:text="${projectenZonderDocument != null ? projectenZonderDocument : 'NULL'}">unknown</span>
         </div>
-        
+
         <!-- Success Message -->
         <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show" role="alert">
             <i class="fas fa-check-circle me-2"></i>
             <span th:text="${successMessage}"></span>
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-        
-        <!-- Error Message -->
-        <div th:if="${param.error}" class="alert alert-warning alert-dismissible fade show" role="alert">
-            <i class="fas fa-exclamation-triangle me-2"></i>
-            Er is een technische fout opgetreden. Probeer het opnieuw of neem contact op met de beheerder.
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
 
@@ -92,87 +71,42 @@
         <div class="row mb-4">
             <div class="col-md-3">
                 <div class="card bg-primary text-white">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between">
-                            <div>
-                                <h4 th:text="${#lists.size(projecten)}">0</h4>
-                                <small>Totaal Projecten</small>
-                            </div>
-                            <i class="fas fa-folder fa-2x opacity-50"></i>
-                        </div>
+                    <div class="card-body text-center">
+                        <h2 th:text="${projecten != null ? projecten.size() : 0}">0</h2>
+                        <p class="mb-0">Totaal Projecten</p>
                     </div>
                 </div>
             </div>
             <div class="col-md-3">
                 <div class="card bg-success text-white">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between">
-                            <div>
-                                <h4 th:text="${projectenMetDocument}">0</h4>
-                                <small>Documenten Klaar</small>
-                            </div>
-                            <i class="fas fa-file-alt fa-2x opacity-50"></i>
-                        </div>
+                    <div class="card-body text-center">
+                        <h2 th:text="${projectenMetDocument != null ? projectenMetDocument : 0}">0</h2>
+                        <p class="mb-0">Documenten Klaar</p>
                     </div>
                 </div>
             </div>
             <div class="col-md-3">
                 <div class="card bg-warning text-white">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between">
-                            <div>
-                                <h4 th:text="${projectenZonderDocument}">0</h4>
-                                <small>In Behandeling</small>
-                            </div>
-                            <i class="fas fa-clock fa-2x opacity-50"></i>
-                        </div>
+                    <div class="card-body text-center">
+                        <h2 th:text="${projectenZonderDocument != null ? projectenZonderDocument : 0}">0</h2>
+                        <p class="mb-0">In Behandeling</p>
                     </div>
                 </div>
             </div>
             <div class="col-md-3">
                 <div class="card bg-info text-white">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between">
-                            <div>
-                                <h4>Deze Week</h4>
-                                <small>Nieuwe Projecten</small>
-                            </div>
-                            <i class="fas fa-calendar fa-2x opacity-50"></i>
-                        </div>
+                    <div class="card-body text-center">
+                        <h2>0</h2>
+                        <p class="mb-0">Deze Week</p>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Search Bar -->
-        <div class="row mb-4">
-            <div class="col-md-6">
-                <div class="input-group">
-                    <span class="input-group-text">
-                        <i class="fas fa-search"></i>
-                    </span>
-                    <input type="text" class="form-control" placeholder="Zoek op projectnaam of nummer..." 
-                           id="zoekInput" onkeyup="zoekProjecten()">
-                </div>
-            </div>
-            <div class="col-md-6 text-end">
-                <div class="btn-group" role="group">
-                    <button type="button" class="btn btn-outline-secondary active" onclick="toonAlleProjecten()">
-                        Alle
-                    </button>
-                    <button type="button" class="btn btn-outline-secondary" onclick="filterOpStatus('klaar')">
-                        Klaar
-                    </button>
-                    <button type="button" class="btn btn-outline-secondary" onclick="filterOpStatus('behandeling')">
-                        In Behandeling
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Project Cards -->
-        <div class="row" id="projectenContainer">
-            <div th:if="${#lists.isEmpty(projecten)}" class="col-12">
+        <!-- Project List -->
+        <div class="row">
+            <!-- Empty State -->
+            <div th:if="${projecten == null || projecten.empty}" class="col-12">
                 <div class="card text-center py-5">
                     <div class="card-body">
                         <i class="fas fa-folder-open fa-3x text-muted mb-3"></i>
@@ -186,84 +120,39 @@
                 </div>
             </div>
             
-            <div th:each="project : ${projecten}" class="col-md-6 col-lg-4 mb-4" 
-                 th:data-status="${project.documentGegenereerd ? 'klaar' : 'behandeling'}"
-                 th:data-naam="${#strings.toLowerCase(project.projectNaam)}"
-                 th:data-nummer="${#strings.toLowerCase(project.projectNummer)}">
-                <div class="card project-card h-100">
+            <!-- Project Cards -->
+            <div th:each="project : ${projecten}" class="col-md-6 col-lg-4 mb-4">
+                <div class="card h-100">
                     <div class="card-header d-flex justify-content-between align-items-center">
-                        <h6 class="mb-0 text-truncate" th:text="${project.projectNummer}">PR2024-001</h6>
-                        <span th:if="${project.documentGegenereerd}" 
-                              class="badge bg-success status-badge">
+                        <h6 class="mb-0" th:text="${project.projectNummer}">PR2024-001</h6>
+                        <span th:if="${project.documentGegenereerd}" class="badge bg-success">
                             <i class="fas fa-check me-1"></i>Klaar
                         </span>
-                        <span th:unless="${project.documentGegenereerd}" 
-                              class="badge bg-warning status-badge">
+                        <span th:unless="${project.documentGegenereerd}" class="badge bg-warning">
                             <i class="fas fa-clock me-1"></i>In behandeling
                         </span>
                     </div>
                     <div class="card-body">
-                        <h5 class="card-title text-truncate" th:text="${project.projectNaam}">
-                            Kantorencomplex Amsterdam Noord
-                        </h5>
-                        <p class="card-text text-muted small" 
-                           th:text="${project.omschrijving != null and !#strings.isEmpty(project.omschrijving) ? 
-                                    (project.omschrijving.length() > 100 ? 
-                                     project.omschrijving.substring(0, 100) + '...' : 
-                                     project.omschrijving) : 'Geen omschrijving'}">
-                            Renovatie klimaatinstallatie met warmtepomp...
+                        <h5 class="card-title" th:text="${project.projectNaam}">Project Naam</h5>
+                        <p class="card-text text-muted" 
+                           th:text="${project.omschrijving != null ? project.omschrijving : 'Geen omschrijving'}">
+                            Project omschrijving...
                         </p>
                         <small class="text-muted">
                             <i class="fas fa-calendar me-1"></i>
-                            <span th:text="${#temporals.format(project.aangemaaktOp, 'dd-MM-yyyy HH:mm')}">
-                                01-01-2024 10:30
-                            </span>
+                            <span th:text="${#temporals.format(project.aangemaaktOp, 'dd-MM-yyyy')}">01-01-2024</span>
                         </small>
                     </div>
                     <div class="card-footer bg-transparent">
-                        <div class="btn-group w-100" role="group">
-                            <a th:href="@{/projecten/{id}/configuratie(id=${project.id})}" 
-                               class="btn btn-vink btn-sm"
-                               th:title="${project.documentGegenereerd ? 'Configuratie bekijken' : 'Configuratie instellen'}">
-                                <i class="fas fa-cog me-1"></i>
-                                <span th:text="${project.documentGegenereerd ? 'Bekijk' : 'Configureer'}">Configureer</span>
+                        <div class="btn-group w-100">
+                            <a th:href="@{/projecten/{id}(id=${project.id})}" 
+                               class="btn btn-outline-primary btn-sm">
+                                <i class="fas fa-eye me-1"></i>Bekijk
                             </a>
-                            <div class="btn-group" role="group">
-                                <button type="button" class="btn btn-outline-secondary btn-sm dropdown-toggle" 
-                                        data-bs-toggle="dropdown" aria-expanded="false">
-                                    <i class="fas fa-ellipsis-v"></i>
-                                </button>
-                                <ul class="dropdown-menu dropdown-menu-end">
-                                    <li>
-                                        <a class="dropdown-item" th:href="@{/projecten/{id}/bewerken(id=${project.id})}">
-                                            <i class="fas fa-edit me-2"></i>Bewerken
-                                        </a>
-                                    </li>
-                                    <li th:if="${!project.documentGegenereerd}">
-                                        <form th:action="@{/projecten/{id}/document-genereren(id=${project.id})}" 
-                                              method="post" style="display: inline;" class="w-100">
-                                            <button type="submit" class="dropdown-item">
-                                                <i class="fas fa-file-download me-2"></i>Document Genereren
-                                            </button>
-                                        </form>
-                                    </li>
-                                    <li th:if="${project.documentGegenereerd}">
-                                        <a class="dropdown-item" th:href="@{/projecten/{id}/document-download(id=${project.id})}">
-                                            <i class="fas fa-download me-2"></i>Document Downloaden
-                                        </a>
-                                    </li>
-                                    <li><hr class="dropdown-divider"></li>
-                                    <li>
-                                        <form th:action="@{/projecten/{id}/verwijderen(id=${project.id})}" 
-                                              method="post" style="display: inline;" class="w-100"
-                                              onsubmit="return confirm('Weet je zeker dat je dit project wilt verwijderen?')">
-                                            <button type="submit" class="dropdown-item text-danger">
-                                                <i class="fas fa-trash me-2"></i>Verwijderen
-                                            </button>
-                                        </form>
-                                    </li>
-                                </ul>
-                            </div>
+                            <a th:href="@{/projecten/{id}/configuratie(id=${project.id})}" 
+                               class="btn btn-vink btn-sm">
+                                <i class="fas fa-cog me-1"></i>Configureer
+                            </a>
                         </div>
                     </div>
                 </div>
@@ -274,70 +163,5 @@
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     
-    <!-- Custom JavaScript voor zoeken en filteren -->
-    <script>
-        function zoekProjecten() {
-            const zoekterm = document.getElementById('zoekInput').value.toLowerCase();
-            const projectCards = document.querySelectorAll('[data-naam]');
-            
-            projectCards.forEach(card => {
-                const naam = card.getAttribute('data-naam');
-                const nummer = card.getAttribute('data-nummer');
-                
-                if (naam.includes(zoekterm) || nummer.includes(zoekterm)) {
-                    card.style.display = 'block';
-                } else {
-                    card.style.display = 'none';
-                }
-            });
-        }
-        
-        function filterOpStatus(status) {
-            // Update active button
-            document.querySelectorAll('.btn-group button').forEach(btn => {
-                btn.classList.remove('active');
-            });
-            event.target.classList.add('active');
-            
-            const projectCards = document.querySelectorAll('[data-status]');
-            
-            projectCards.forEach(card => {
-                if (status === 'alle' || card.getAttribute('data-status') === status) {
-                    card.style.display = 'block';
-                } else {
-                    card.style.display = 'none';
-                }
-            });
-        }
-        
-        function toonAlleProjecten() {
-            // Update active button
-            document.querySelectorAll('.btn-group button').forEach(btn => {
-                btn.classList.remove('active');
-            });
-            event.target.classList.add('active');
-            
-            const projectCards = document.querySelectorAll('[data-status]');
-            projectCards.forEach(card => {
-                card.style.display = 'block';
-            });
-        }
-        
-        // Auto-hide success messages after 5 seconds
-        setTimeout(() => {
-            const alerts = document.querySelectorAll('.alert-success');
-            alerts.forEach(alert => {
-                if (alert) {
-                    alert.classList.remove('show');
-                    setTimeout(() => alert.remove(), 150);
-                }
-            });
-        }, 5000);
-    </script>
-    
 </body>
-</html>en/{id}(id=${project.id})}" 
-                               class="btn btn-outline-primary btn-sm">
-                                <i class="fas fa-eye me-1"></i>Bekijk
-                            </a>
-                            <a th:href="@{/project
+</html>
