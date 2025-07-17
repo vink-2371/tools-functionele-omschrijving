@@ -704,20 +704,16 @@
         
         // Genereer document
         function genereersDocument() {
-            // Hier zou de daadwerkelijke document generatie plaatsvinden
-            // Voor nu tonen we een loading state en redirect
-            
             const btn = document.getElementById('documentGenererenBtn');
             btn.disabled = true;
             btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Document wordt gegenereerd...';
             
-            // Simuleer document generatie (in echte implementatie: API call)
+            // Sla configuratie op en redirect naar overzicht
             setTimeout(() => {
-                // Sla configuratie op (hier zou je een POST request doen)
                 console.log('Configuratie:', antwoorden);
                 
-                // Redirect naar project details of download pagina
-                window.location.href = `/projecten/${window.location.pathname.split('/')[2]}/document-genereren`;
+                // Redirect naar projectoverzicht met success message
+                window.location.href = '/projecten?documentGenerated=true';
             }, 2000);
         }
     </script>

@@ -43,7 +43,19 @@ public class Project {
     private boolean documentGegenereerd = false;
     
     @Column(name = "document_gegenereerd_op")
-    private LocalDateTime documentGegenereerdOp;
+    private LocalDateTime documentGenereerdOp;
+    
+    @Column(name = "document_sharepoint_url")
+    private String documentSharepointUrl;
+    
+    @Column(name = "document_bestandsnaam")
+    private String documentBestandsnaam;
+    
+    @Column(name = "document_grootte_bytes")
+    private Long documentGrootteBytes;
+    
+    @Column(name = "configuratie_json", columnDefinition = "TEXT")
+    private String configuratieJson;
     
     // Constructors
     public Project() {
@@ -114,12 +126,44 @@ public class Project {
         this.documentGegenereerd = documentGegenereerd;
     }
     
-    public LocalDateTime getDocumentGegenereerdOp() {
-        return documentGegenereerdOp;
+    public LocalDateTime getDocumentGenereerdOp() {
+        return documentGenereerdOp;
     }
     
-    public void setDocumentGegenereerdOp(LocalDateTime documentGegenereerdOp) {
-        this.documentGegenereerdOp = documentGegenereerdOp;
+    public void setDocumentGenereerdOp(LocalDateTime documentGenereerdOp) {
+        this.documentGenereerdOp = documentGenereerdOp;
+    }
+    
+    public String getDocumentSharepointUrl() {
+        return documentSharepointUrl;
+    }
+    
+    public void setDocumentSharepointUrl(String documentSharepointUrl) {
+        this.documentSharepointUrl = documentSharepointUrl;
+    }
+    
+    public String getDocumentBestandsnaam() {
+        return documentBestandsnaam;
+    }
+    
+    public void setDocumentBestandsnaam(String documentBestandsnaam) {
+        this.documentBestandsnaam = documentBestandsnaam;
+    }
+    
+    public Long getDocumentGrootteBytes() {
+        return documentGrootteBytes;
+    }
+    
+    public void setDocumentGrootteBytes(Long documentGrootteBytes) {
+        this.documentGrootteBytes = documentGrootteBytes;
+    }
+    
+    public String getConfiguratieJson() {
+        return configuratieJson;
+    }
+    
+    public void setConfiguratieJson(String configuratieJson) {
+        this.configuratieJson = configuratieJson;
     }
     
     // Helper methods
@@ -129,7 +173,19 @@ public class Project {
     
     public void markeerDocumentAlsGegenereerd() {
         this.documentGegenereerd = true;
-        this.documentGegenereerdOp = LocalDateTime.now();
+        this.documentGenereerdOp = LocalDateTime.now();
+    }
+    
+    public void markeerDocumentAlsGegenereerd(String sharepointUrl, String bestandsnaam, Long grootte) {
+        this.documentGegenereerd = true;
+        this.documentGenereerdOp = LocalDateTime.now();
+        this.documentSharepointUrl = sharepointUrl;
+        this.documentBestandsnaam = bestandsnaam;
+        this.documentGrootteBytes = grootte;
+    }
+    
+    public boolean heeftDocument() {
+        return documentGegenereerd && documentSharepointUrl != null;
     }
     
     @Override
