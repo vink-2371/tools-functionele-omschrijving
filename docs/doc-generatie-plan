@@ -1,0 +1,206 @@
+# Document Generatie - Implementatieplan
+
+## 🎯 Doel
+Implementeren van echte document generatie functionaliteit door:
+1. Configuratie JSON uit database te lezen
+2. Juiste tekstblokken uit SharePoint te halen
+3. Word document samen te stellen met Apache POI
+4. Document op te slaan/downloaden
+
+## 📋 Implementatie Stappen
+
+### Stap 1: Spelling Correcties
+**Bestanden wijzigen:**
+- `ProjectController.java`: `genereersDocument()` → `genereerDocument()`
+- `configuratie.html`: JavaScript functie naam
+- `details.html`: Form action URL
+- Alle andere verwijzingen
+
+### Stap 2: Document Service Layer
+**Nieuwe bestanden aanmaken:**
+```java
+// DocumentService.java
+@Service
+public class DocumentService {
+    
+    public byte[] genereerDocument(Long projectId) {
+        // 1. Haal project op
+        // 2. Parse configuratie JSON
+        // 3. Bepaal benodigde tekstblokken
+        // 4. Haal tekstblokken op uit SharePoint
+        // 5. Combineer tot Word document
+        // 6. Return als byte array
+    }
+}
+```
+
+### Stap 3: SharePoint Integration
+**Microsoft Graph API implementeren:**
+```java
+// SharePointService.java
+@Service 
+public class SharePointService {
+    
+    public byte[] getTextblokFromSharePoint(String filename) {
+        // Microsoft Graph API calls
+        // Return .docx bestand als byte array
+    }
+}
+```
+
+### Stap 4: Apache POI Document Assembly
+**Word document samenstellen:**
+```java
+// DocumentAssemblyService.java
+@Service
+public class DocumentAssemblyService {
+    
+    public byte[] assembleDocument(List<byte[]> textblokken) {
+        // Apache POI logica
+        // Combineer meerdere .docx bestanden
+        // Return finale document
+    }
+}
+```
+
+### Stap 5: Controller Updates
+**ProjectController uitbreiden:**
+```java
+@PostMapping("/{id}/genereer-document")
+public ResponseEntity<byte[]> genereerDocument(@PathVariable Long id) {
+    try {
+        byte[] document = documentService.genereerDocument(id);
+        
+        // Update project status
+        projectService.markeerDocumentGegenereerd(id, ...);
+        
+        return ResponseEntity.ok()
+            .header("Content-Type", "application/vnd.openxmlformats-officedocument.wordprocessingml.document")
+            .header("Content-Disposition", "attachment; filename=functionele_omschrijving.docx")
+            .body(document);
+            
+    } catch (Exception e) {
+        return ResponseEntity.badRequest().build();
+    }
+}
+```
+
+## 🔧 Technische Architectuur
+
+### Database Updates
+```sql
+-- Nieuwe kolommen voor document tracking
+ALTER TABLE projects ADD COLUMN document_bestandspad VARCHAR(500);
+ALTER TABLE projects ADD COLUMN document_versie INTEGER DEFAULT 1;
+ALTER TABLE projects ADD COLUMN laatste_configuratie_wijziging TIMESTAMP;
+```
+
+### Configuratie Mapping
+**JSON → Tekstblokken mapping:**
+```java
+public class ConfiguratieMapper {
+    
+    public List<String> bepaalBenodigdeTextblokken(String configuratieJson) {
+        // Parse JSON
+        // Return lijst van SharePoint bestandsnamen
+        // Bijvoorbeeld: ["warmtepomp_basis.docx", "regeltechniek_standaard.docx"]
+    }
+}
+```
+
+### Error Handling
+```java
+public class DocumentGenerationException extends RuntimeException {
+    // Custom exception voor document generatie fouten
+}
+```
+
+## 📁 Nieuwe Bestanden Structuur
+```
+src/main/java/nl/vink/func_omschr/
+├── service/
+│   ├── DocumentService.java          (NEW)
+│   ├── SharePointService.java        (NEW)
+│   └── DocumentAssemblyService.java  (NEW)
+├── config/
+│   └── GraphApiConfig.java          (NEW)
+├── dto/
+│   └── DocumentGenerationRequest.java (NEW)
+└── exception/
+    └── DocumentGenerationException.java (NEW)
+```
+
+## 🔄 User Flow Updates
+
+### Huidige Flow:
+1. Project aanmaken
+2. Configuratie invullen
+3. "Document Genereren" → Placeholder
+
+### Nieuwe Flow:
+1. Project aanmaken
+2. Configuratie invullen
+3. "Document Genereren" → **Echte generatie**
+4. Download/Email document
+5. Document archivering
+
+## 🧪 Testing Strategy
+
+### Unit Tests
+```java
+@Test
+public void testDocumentGeneratie() {
+    // Test document service
+    // Mock SharePoint calls
+    // Verify Apache POI assembly
+}
+```
+
+### Integration Tests
+```java
+@Test
+public void testFullDocumentFlow() {
+    // Test complete flow
+    // Van configuratie tot document
+}
+```
+
+## 🚀 Rollout Plan
+
+### Fase 1: Basis Implementatie (Week 1)
+- [ ] Spelling correcties
+- [ ] Document service skeleton
+- [ ] Basic Apache POI setup
+
+### Fase 2: SharePoint Integration (Week 2)
+- [ ] Microsoft Graph API setup
+- [ ] SharePoint document ophalen
+- [ ] Authenticatie configuratie
+
+### Fase 3: Document Assembly (Week 3)
+- [ ] Apache POI document combining
+- [ ] Configuratie → tekstblokken mapping
+- [ ] Error handling
+
+### Fase 4: Polish & Testing (Week 4)
+- [ ] UI updates
+- [ ] Error handling
+- [ ] Testing
+- [ ] Documentation
+
+## 🎯 Success Criteria
+
+✅ **Functioneel:**
+- Document wordt gegenereerd op basis van configuratie
+- Juiste tekstblokken worden gecombineerd
+- Professional Word document output
+
+✅ **Technisch:**
+- SharePoint integratie werkt
+- Apache POI assembly stabiel
+- Error handling robuust
+
+✅ **UX:**
+- Intuïtieve user experience
+- Duidelijke feedback tijdens generatie
+- Download/preview functionaliteit

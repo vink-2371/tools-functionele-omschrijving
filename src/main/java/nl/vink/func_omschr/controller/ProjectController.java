@@ -168,7 +168,7 @@ public class ProjectController {
     
     // Document genereren (placeholder voor later)
     @PostMapping("/{id}/document-genereren")
-    public String genereersDocument(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+    public String genereerDocument(@PathVariable Long id, RedirectAttributes redirectAttributes) {
         Project project = projectService.vindProjectById(id);
         
         // TODO: Hier komt later de document generatie logica

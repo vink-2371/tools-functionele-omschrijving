@@ -51,6 +51,7 @@ public interface ProjectRepository extends JpaRepository<Project, Long> {
     /**
      * Haalt projecten op waar al een document voor is gegenereerd
      */
+    @Query("SELECT p FROM Project p WHERE p.documentGegenereerd = true ORDER BY p.documentGenereerdOp DESC")
     List<Project> findByDocumentGegenereerdTrueOrderByDocumentGegenereerdOpDesc();
     
     /**

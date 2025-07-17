@@ -26,7 +26,7 @@ public class ProjectService {
             List<Project> projecten = projectRepository.findAllByOrderByAangemaaktOpDesc();
             return projecten != null ? projecten : new ArrayList<>();
         } catch (Exception e) {
-            return new ArrayList<>();
+            return new ArrayList<>(); // Return lege lijst bij fout
         }
     }
     
@@ -79,7 +79,12 @@ public class ProjectService {
             throw new IllegalArgumentException("Projectnummer " + project.getProjectNummer() + " bestaat al");
         }
         
-        return projectRepository.save(project);
+        try {
+            Project opgeslagenProject = projectRepository.save(project);
+            return opgeslagenProject;
+        } catch (Exception e) {
+            throw new RuntimeException("Fout bij opslaan project: " + e.getMessage(), e);
+        }
     }
     
     /**
@@ -147,6 +152,24 @@ public class ProjectService {
         }
         
         return projectNummer;
+    }
+    
+    /**
+     * Slaat configuratie op voor een project
+     */
+    public Project opslaanConfiguratie(Long projectId, String configuratieJson) {
+        Project project = vindProjectById(projectId);
+        project.setConfiguratieJson(configuratieJson);
+        return projectRepository.save(project);
+    }
+    
+    /**
+     * Markeert document als gegenereerd met SharePoint details
+     */
+    public Project markeerDocumentGegenereerd(Long projectId, String sharepointUrl, String bestandsnaam, Long grootte) {
+        Project project = vindProjectById(projectId);
+        project.markeerDocumentAlsGegenereerd(sharepointUrl, bestandsnaam, grootte);
+        return projectRepository.save(project);
     }
     
     /**

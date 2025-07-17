@@ -8,23 +8,33 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
         .vink-header {
-            background: linear-gradient(135deg, #2c5aa0 0%, #1e3a8a 100%);
+            background: linear-gradient(135deg, #12785e 0%, #0f6b51 100%);
             color: white;
-            padding: 1.5rem 0;
+            padding: 1rem 0;
             margin-bottom: 2rem;
+            border-bottom: 3px solid #cccd22;
         }
+        .navbar-brand {
+            font-size: 2.5rem;
+        }
+        .vink-subtitle {
+            font-size: 0.9rem;
+            opacity: 0.75;
+            font-weight: normal;
+        }
+
         .form-container {
             max-width: 600px;
             margin: 0 auto;
         }
         .btn-vink {
-            background-color: #2c5aa0;
-            border-color: #2c5aa0;
+            background-color: #12785e;
+            border-color: #12785e;
             color: white;
         }
         .btn-vink:hover {
-            background-color: #1e3a8a;
-            border-color: #1e3a8a;
+            background-color: #0f6b51;
+            border-color: #0f6b51;
             color: white;
         }
         .step-indicator {
@@ -86,14 +96,14 @@
     <div class="vink-header">
         <div class="container">
             <div class="row align-items-center">
-                <div class="col-md-6">
-                    <h1 class="mb-0">
+                <div class="col-md-8">
+                    <h1 class="navbar-brand mb-0">
                         <i class="fas fa-plus-circle me-2"></i>
                         Nieuw Project
                     </h1>
-                    <p class="mb-0 opacity-75">Stap 1: Basisgegevens</p>
+                    <p class="vink-subtitle mb-0">Stap 1: Basisgegevens</p>
                 </div>
-                <div class="col-md-6 text-md-end">
+                <div class="col-md-4 text-md-end">
                     <a href="/projecten" class="btn btn-light">
                         <i class="fas fa-arrow-left me-2"></i>
                         Terug naar Overzicht
@@ -130,6 +140,12 @@
                     <small class="text-muted">Vul de basisgegevens van het project in</small>
                 </div>
                 <div class="card-body">
+                    
+                    <!-- Error Message -->
+                    <div th:if="${errorMessage}" class="alert alert-danger" role="alert">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <span th:text="${errorMessage}"></span>
+                    </div>
                     
                     <!-- Form -->
                     <form th:action="@{/projecten/nieuw}" th:object="${project}" method="post" novalidate>
@@ -182,7 +198,7 @@
                             <div class="form-text">
                                 <i class="fas fa-info-circle me-1"></i>
                                 Uniek projectnummer (alleen letters, cijfers, streepjes en underscores)
-                                <button type="button" class="btn btn-link btn-sm p-0 ms-2" onclick="genereerdProjectNummer()">
+                                <button type="button" class="btn btn-link btn-sm p-0 ms-2" onclick="genereersProjectNummer()">
                                     <i class="fas fa-magic me-1"></i>Genereer automatisch
                                 </button>
                             </div>
@@ -231,8 +247,8 @@
                                 Annuleren
                             </a>
                             <button type="submit" class="btn btn-vink btn-lg">
+                                <i class="fas fa-arrow-right me-2"></i>
                                 Volgende Stap
-                                <i class="fas fa-arrow-right ms-2"></i>
                             </button>
                         </div>
                         
@@ -265,7 +281,7 @@
         }
         
         // Automatisch projectnummer genereren
-        function genereerdProjectNummer() {
+        function genereersProjectNummer() {
             const jaar = new Date().getFullYear();
             const maand = String(new Date().getMonth() + 1).padStart(2, '0');
             const dag = String(new Date().getDate()).padStart(2, '0');

@@ -8,24 +8,50 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
         .vink-header {
-            background: linear-gradient(135deg, #2c5aa0 0%, #1e3a8a 100%);
+            background: linear-gradient(135deg, #12785e 0%, #0f6b51 100%);
             color: white;
-            padding: 1.5rem 0;
+            padding: 1rem 0;
             margin-bottom: 2rem;
+            border-bottom: 3px solid #cccd22;
+        }
+        .vink-logo-space {
+            width: 120px;
+            height: 60px;
+            background: rgba(255,255,255,0.1);
+            border: 2px dashed rgba(255,255,255,0.3);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: rgba(255,255,255,0.6);
+            font-size: 0.8rem;
+            margin-right: 1rem;
+        }
+        .navbar-brand {
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+        .vink-subtitle {
+            font-size: 0.9rem;
+            opacity: 0.9;
+            font-weight: normal;
         }
         .form-container {
             max-width: 800px;
             margin: 0 auto;
         }
         .btn-vink {
-            background-color: #2c5aa0;
-            border-color: #2c5aa0;
+            background-color: #12785e;
+            border-color: #12785e;
             color: white;
         }
         .btn-vink:hover {
-            background-color: #1e3a8a;
-            border-color: #1e3a8a;
+            background-color: #0f6b51;
+            border-color: #0f6b51;
             color: white;
+        }
+        .btn-vink:focus {
+            box-shadow: 0 0 0 0.2rem rgba(18, 120, 94, 0.25);
         }
         .step-indicator {
             display: flex;
@@ -37,7 +63,7 @@
             height: 40px;
             border-radius: 50%;
             background-color: #e9ecef;
-            color: #6c757d;
+            color: #9b9b9b;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -46,12 +72,12 @@
             position: relative;
         }
         .step.active {
-            background-color: #2c5aa0;
+            background-color: #12785e;
             color: white;
         }
         .step.completed {
-            background-color: #28a745;
-            color: white;
+            background-color: #cccd22;
+            color: #4b4b4a;
         }
         .step::after {
             content: '';
@@ -67,15 +93,15 @@
             display: none;
         }
         .step.completed::after {
-            background-color: #28a745;
+            background-color: #cccd22;
         }
         .question-card {
             transition: all 0.3s ease;
             border: 2px solid transparent;
         }
         .question-card.active {
-            border-color: #2c5aa0;
-            box-shadow: 0 0 0 0.2rem rgba(44, 90, 160, 0.25);
+            border-color: #12785e;
+            box-shadow: 0 0 0 0.2rem rgba(18, 120, 94, 0.25);
         }
         .question-card.hidden {
             display: none;
@@ -88,12 +114,12 @@
             margin-bottom: 0.5rem;
         }
         .choice-btn:hover {
-            border-color: #2c5aa0;
+            border-color: #12785e;
             background-color: #f8f9ff;
         }
         .choice-btn.selected {
-            border-color: #2c5aa0;
-            background-color: #2c5aa0;
+            border-color: #12785e;
+            background-color: #12785e;
             color: white;
         }
         .choice-btn .description {
@@ -102,8 +128,45 @@
             margin-top: 0.25rem;
         }
         .progress-bar {
-            background-color: #2c5aa0;
+            background-color: #12785e;
         }
+        .btn-outline-primary {
+            color: #12785e;
+            border-color: #12785e;
+        }
+        .btn-outline-primary:hover {
+            background-color: #12785e;
+            border-color: #12785e;
+            color: white;
+        }
+        .badge.bg-light {
+            background-color: #cccd22 !important;
+            color: #4b4b4a !important;
+        }
+        .card-header.bg-primary {
+            background-color: #12785e !important;
+        }
+        .card-header.bg-success {
+            background-color: #cccd22 !important;
+            color: #4b4b4a !important;
+        }
+        .card-header.bg-info {
+            background-color: #12785e !important;
+        }
+        .card-header.bg-warning {
+            background-color: #f0ad4e !important;
+        }
+        .card-header.bg-secondary {
+            background-color: #9b9b9b !important;
+        }
+        .card-header.bg-dark {
+            background-color: #4b4b4a !important;
+        }
+        .alert-info {
+            background-color: rgba(204, 205, 34, 0.1);
+            border-color: #cccd22;
+            color: #4b4b4a;
+        }mb-0 opacity-75
     </style>
 </head>
 <body class="bg-light">
@@ -427,7 +490,7 @@
                             </button>
                             
                             <button type="button" id="documentGenererenBtn" class="btn btn-success btn-lg" 
-                                    onclick="genereersDocument()" style="display: none;">
+                                    onclick="genereerDocument()" style="display: none;">
                                 <i class="fas fa-file-download me-2"></i>
                                 Document Genereren
                             </button>
@@ -703,21 +766,17 @@
         }
         
         // Genereer document
-        function genereersDocument() {
-            // Hier zou de daadwerkelijke document generatie plaatsvinden
-            // Voor nu tonen we een loading state en redirect
-            
+        function genereerDocument() {
             const btn = document.getElementById('documentGenererenBtn');
             btn.disabled = true;
             btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Document wordt gegenereerd...';
             
-            // Simuleer document generatie (in echte implementatie: API call)
+            // Sla configuratie op en redirect naar overzicht
             setTimeout(() => {
-                // Sla configuratie op (hier zou je een POST request doen)
                 console.log('Configuratie:', antwoorden);
                 
-                // Redirect naar project details of download pagina
-                window.location.href = `/projecten/${window.location.pathname.split('/')[2]}/document-genereren`;
+                // Redirect naar projectoverzicht met success message
+                window.location.href = '/projecten?documentGegenerated=true';
             }, 2000);
         }
     </script>
