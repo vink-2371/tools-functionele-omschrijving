@@ -29,16 +29,12 @@ public class ProjectController {
     // Overzichtspagina met alle projecten
     @GetMapping
     public String projectOverzicht(Model model) {
-        System.out.println("🔍 DEBUG: ProjectController.projectOverzicht() aangeroepen voor URL /projecten");
-        
         try {
             List<Project> projecten = projectService.getAlleProjecten();
-            System.out.println("📊 DEBUG: Aantal projecten opgehaald: " + (projecten != null ? projecten.size() : "NULL"));
             
             // Zorg ervoor dat projecten nooit null is
             if (projecten == null) {
                 projecten = new ArrayList<>();
-                System.out.println("⚠️ DEBUG: Projecten was null, lege lijst aangemaakt");
             }
             
             // Tel projecten voor statistieken
@@ -50,21 +46,15 @@ public class ProjectController {
                     .filter(p -> !p.isDocumentGegenereerd())
                     .count();
             
-            System.out.println("📈 DEBUG: Statistieken - Met document: " + projectenMetDocument + ", Zonder document: " + projectenZonderDocument);
-            
             // Voeg data toe aan model
             model.addAttribute("projecten", projecten);
             model.addAttribute("projectenMetDocument", projectenMetDocument);
             model.addAttribute("projectenZonderDocument", projectenZonderDocument);
             
-            System.out.println("✅ DEBUG: Model attributes toegevoegd, naar template projecten/overzicht");
             return "projecten/overzicht";
             
         } catch (Exception e) {
-            System.err.println("❌ ERROR in ProjectController.projectOverzicht(): " + e.getMessage());
-            e.printStackTrace();
-            
-            // Fallback: lege data
+            // Fallback: lege data bij fout
             model.addAttribute("projecten", new ArrayList<>());
             model.addAttribute("projectenMetDocument", 0L);
             model.addAttribute("projectenZonderDocument", 0L);

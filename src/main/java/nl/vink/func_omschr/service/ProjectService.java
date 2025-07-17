@@ -23,20 +23,10 @@ public class ProjectService {
      */
     public List<Project> getAlleProjecten() {
         try {
-            System.out.println("🔍 ProjectService.getAlleProjecten() aangeroepen");
             List<Project> projecten = projectRepository.findAllByOrderByAangemaaktOpDesc();
-            
-            if (projecten == null) {
-                System.out.println("⚠️ Repository retourneerde null, lege lijst gemaakt");
-                projecten = new ArrayList<>();
-            }
-            
-            System.out.println("📊 Service: " + projecten.size() + " projecten gevonden");
-            return projecten;
-            
+            return projecten != null ? projecten : new ArrayList<>();
         } catch (Exception e) {
-            System.err.println("❌ Fout bij ophalen projecten: " + e.getMessage());
-            return new ArrayList<>(); // Return lege lijst bij fout
+            return new ArrayList<>();
         }
     }
     

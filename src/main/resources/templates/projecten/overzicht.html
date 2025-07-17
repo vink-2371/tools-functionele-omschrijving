@@ -51,15 +51,6 @@
     <!-- Main Content -->
     <div class="container">
         
-        <!-- DEBUG INFO (tijdelijk) -->
-        <div class="alert alert-info" style="font-family: monospace;">
-            <strong>🔍 DEBUG INFO:</strong><br>
-            Projecten is null: <span th:text="${projecten == null}">unknown</span><br>
-            Projecten size: <span th:text="${projecten != null ? projecten.size() : 'NULL'}">unknown</span><br>
-            Met document: <span th:text="${projectenMetDocument != null ? projectenMetDocument : 'NULL'}">unknown</span><br>
-            Zonder document: <span th:text="${projectenZonderDocument != null ? projectenZonderDocument : 'NULL'}">unknown</span>
-        </div>
-
         <!-- Success Message -->
         <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show" role="alert">
             <i class="fas fa-check-circle me-2"></i>
