@@ -490,7 +490,7 @@
                             </button>
                             
                             <button type="button" id="documentGenererenBtn" class="btn btn-success btn-lg" 
-                                    onclick="genereersDocument()" style="display: none;">
+                                    onclick="genereerDocument()" style="display: none;">
                                 <i class="fas fa-file-download me-2"></i>
                                 Document Genereren
                             </button>
@@ -766,7 +766,7 @@
         }
         
         // Genereer document
-        function genereersDocument() {
+        function genereerDocument() {
             const btn = document.getElementById('documentGenererenBtn');
             btn.disabled = true;
             btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Document wordt gegenereerd...';
