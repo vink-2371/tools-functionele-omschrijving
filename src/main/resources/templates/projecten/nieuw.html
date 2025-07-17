@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="nl" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nieuw Project - Vink Installatie Groep</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .vink-header {
+            background: linear-gradient(135deg, #2c5aa0 0%, #1e3a8a 100%);
+            color: white;
+            padding: 1.5rem 0;
+            margin-bottom: 2rem;
+        }
+        .form-container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        .btn-vink {
+            background-color: #2c5aa0;
+            border-color: #2c5aa0;
+            color: white;
+        }
+        .btn-vink:hover {
+            background-color: #1e3a8a;
+            border-color: #1e3a8a;
+            color: white;
+        }
+        .step-indicator {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 2rem;
+        }
+        .step {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: #e9ecef;
+            color: #6c757d;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 1rem;
+            font-weight: bold;
+            position: relative;
+        }
+        .step.active {
+            background-color: #2c5aa0;
+            color: white;
+        }
+        .step.completed {
+            background-color: #28a745;
+            color: white;
+        }
+        .step::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 100%;
+            width: 2rem;
+            height: 2px;
+            background-color: #e9ecef;
+            z-index: -1;
+        }
+        .step:last-child::after {
+            display: none;
+        }
+        .step.completed::after {
+            background-color: #28a745;
+        }
+        .form-floating .form-control:focus {
+            border-color: #2c5aa0;
+            box-shadow: 0 0 0 0.2rem rgba(44, 90, 160, 0.25);
+        }
+        .character-counter {
+            font-size: 0.8rem;
+            color: #6c757d;
+            text-align: right;
+        }
+    </style>
+</head>
+<body class="bg-light">
+    
+    <!-- Header -->
+    <div class="vink-header">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <h1 class="mb-0">
+                        <i class="fas fa-plus-circle me-2"></i>
+                        Nieuw Project
+                    </h1>
+                    <p class="mb-0 opacity-75">Stap 1: Basisgegevens</p>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <a href="/projecten" class="btn btn-light">
+                        <i class="fas fa-arrow-left me-2"></i>
+                        Terug naar Overzicht
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="container">
+        <div class="form-container">
+            
+            <!-- Step Indicator -->
+            <div class="step-indicator">
+                <div class="step active">
+                    <i class="fas fa-info-circle"></i>
+                </div>
+                <div class="step">
+                    <i class="fas fa-cogs"></i>
+                </div>
+                <div class="step">
+                    <i class="fas fa-file-alt"></i>
+                </div>
+            </div>
+            
+            <!-- Form Card -->
+            <div class="card shadow">
+                <div class="card-header bg-white">
+                    <h4 class="mb-0">
+                        <i class="fas fa-building me-2 text-primary"></i>
+                        Projectinformatie
+                    </h4>
+                    <small class="text-muted">Vul de basisgegevens van het project in</small>
+                </div>
+                <div class="card-body">
+                    
+                    <!-- Form -->
+                    <form th:action="@{/projecten/nieuw}" th:object="${project}" method="post" novalidate>
+                        
+                        <!-- Project Naam -->
+                        <div class="form-floating mb-3">
+                            <input type="text" 
+                                   class="form-control" 
+                                   th:field="*{projectNaam}"
+                                   th:classappend="${#fields.hasErrors('projectNaam')} ? 'is-invalid' : ''"
+                                   id="projectNaam" 
+                                   placeholder="Bijv. Kantorencomplex Amsterdam Noord"
+                                   maxlength="200"
+                                   required
+                                   oninput="updateCharacterCounter('projectNaam', 200)">
+                            <label for="projectNaam">
+                                <i class="fas fa-building me-2"></i>
+                                Projectnaam / Adres *
+                            </label>
+                            <div class="character-counter" id="projectNaamCounter">0 / 200</div>
+                            <div th:if="${#fields.hasErrors('projectNaam')}" class="invalid-feedback">
+                                <span th:errors="*{projectNaam}"></span>
+                            </div>
+                            <div class="form-text">
+                                <i class="fas fa-info-circle me-1"></i>
+                                Voer de naam of het adres van het project in
+                            </div>
+                        </div>
+
+                        <!-- Project Nummer -->
+                        <div class="form-floating mb-3">
+                            <input type="text" 
+                                   class="form-control" 
+                                   th:field="*{projectNummer}"
+                                   th:classappend="${#fields.hasErrors('projectNummer')} ? 'is-invalid' : ''"
+                                   id="projectNummer" 
+                                   placeholder="Bijv. VIG-2024-001"
+                                   maxlength="50"
+                                   required
+                                   pattern="[A-Za-z0-9\-_]+"
+                                   oninput="updateCharacterCounter('projectNummer', 50); generateSuggestie()">
+                            <label for="projectNummer">
+                                <i class="fas fa-hashtag me-2"></i>
+                                Projectnummer *
+                            </label>
+                            <div class="character-counter" id="projectNummerCounter">0 / 50</div>
+                            <div th:if="${#fields.hasErrors('projectNummer')}" class="invalid-feedback">
+                                <span th:errors="*{projectNummer}"></span>
+                            </div>
+                            <div class="form-text">
+                                <i class="fas fa-info-circle me-1"></i>
+                                Uniek projectnummer (alleen letters, cijfers, streepjes en underscores)
+                                <button type="button" class="btn btn-link btn-sm p-0 ms-2" onclick="genereerdProjectNummer()">
+                                    <i class="fas fa-magic me-1"></i>Genereer automatisch
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Project Omschrijving -->
+                        <div class="form-floating mb-4">
+                            <textarea class="form-control" 
+                                      th:field="*{omschrijving}"
+                                      th:classappend="${#fields.hasErrors('omschrijving')} ? 'is-invalid' : ''"
+                                      id="omschrijving" 
+                                      placeholder="Korte beschrijving van het project..."
+                                      style="height: 120px"
+                                      maxlength="1000"
+                                      oninput="updateCharacterCounter('omschrijving', 1000)"></textarea>
+                            <label for="omschrijving">
+                                <i class="fas fa-align-left me-2"></i>
+                                Korte Omschrijving
+                            </label>
+                            <div class="character-counter" id="omschrijvingCounter">0 / 1000</div>
+                            <div th:if="${#fields.hasErrors('omschrijving')}" class="invalid-feedback">
+                                <span th:errors="*{omschrijving}"></span>
+                            </div>
+                            <div class="form-text">
+                                <i class="fas fa-info-circle me-1"></i>
+                                Optioneel: korte beschrijving van het project en werkzaamheden
+                            </div>
+                        </div>
+
+                        <!-- Info Box -->
+                        <div class="alert alert-info">
+                            <h6>
+                                <i class="fas fa-calendar me-2"></i>
+                                Automatisch gegenereerd
+                            </h6>
+                            <p class="mb-0">
+                                De <strong>datum</strong> wordt automatisch ingesteld op het moment van documentgeneratie.
+                                Na deze stap kun je de technische specificaties configureren.
+                            </p>
+                        </div>
+
+                        <!-- Form Actions -->
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-between">
+                            <a href="/projecten" class="btn btn-outline-secondary">
+                                <i class="fas fa-times me-2"></i>
+                                Annuleren
+                            </a>
+                            <button type="submit" class="btn btn-vink btn-lg">
+                                Volgende Stap
+                                <i class="fas fa-arrow-right ms-2"></i>
+                            </button>
+                        </div>
+                        
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Custom JavaScript -->
+    <script>
+        // Character counter functie
+        function updateCharacterCounter(fieldId, maxLength) {
+            const field = document.getElementById(fieldId);
+            const counter = document.getElementById(fieldId + 'Counter');
+            const currentLength = field.value.length;
+            
+            counter.textContent = `${currentLength} / ${maxLength}`;
+            
+            if (currentLength > maxLength * 0.9) {
+                counter.style.color = '#dc3545';
+            } else if (currentLength > maxLength * 0.7) {
+                counter.style.color = '#ffc107';
+            } else {
+                counter.style.color = '#6c757d';
+            }
+        }
+        
+        // Automatisch projectnummer genereren
+        function genereerdProjectNummer() {
+            const jaar = new Date().getFullYear();
+            const maand = String(new Date().getMonth() + 1).padStart(2, '0');
+            const dag = String(new Date().getDate()).padStart(2, '0');
+            const tijd = String(new Date().getHours()).padStart(2, '0') + String(new Date().getMinutes()).padStart(2, '0');
+            
+            const projectNummer = `VIG-${jaar}${maand}${dag}-${tijd}`;
+            document.getElementById('projectNummer').value = projectNummer;
+            updateCharacterCounter('projectNummer', 50);
+        }
+        
+        // Suggestie genereren gebaseerd op projectnaam
+        function generateSuggestie() {
+            const projectNaam = document.getElementById('projectNaam').value;
+            const projectNummer = document.getElementById('projectNummer').value;
+            
+            // Als projectnummer leeg is en projectnaam is ingevuld, genereer suggestie
+            if (!projectNummer && projectNaam.length > 3) {
+                const jaar = new Date().getFullYear();
+                const woorden = projectNaam.split(' ').slice(0, 2);
+                const afkorting = woorden.map(w => w.charAt(0).toUpperCase()).join('');
+                const suggestie = `VIG-${jaar}-${afkorting}`;
+                
+                // Toon suggestie via tooltip of placeholder
+                document.getElementById('projectNummer').placeholder = `Suggestie: ${suggestie}`;
+            }
+        }
+        
+        // Initialize character counters on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            updateCharacterCounter('projectNaam', 200);
+            updateCharacterCounter('projectNummer', 50);
+            updateCharacterCounter('omschrijving', 1000);
+            
+            // Focus op eerste veld
+            document.getElementById('projectNaam').focus();
+        });
+        
+        // Form validation
+        (function() {
+            'use strict';
+            window.addEventListener('load', function() {
+                var forms = document.getElementsByTagName('form');
+                var validation = Array.prototype.filter.call(forms, function(form) {
+                    form.addEventListener('submit', function(event) {
+                        if (form.checkValidity() === false) {
+                            event.preventDefault();
+                            event.stopPropagation();
+                        }
+                        form.classList.add('was-validated');
+                    }, false);
+                });
+            }, false);
+        })();
+    </script>
+    
+</body>
+</html>
