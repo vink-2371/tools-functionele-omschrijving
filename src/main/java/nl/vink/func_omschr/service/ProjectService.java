@@ -26,7 +26,7 @@ public class ProjectService {
             List<Project> projecten = projectRepository.findAllByOrderByAangemaaktOpDesc();
             return projecten != null ? projecten : new ArrayList<>();
         } catch (Exception e) {
-            return new ArrayList<>(); // Return lege lijst bij fout
+            return new ArrayList<>();
         }
     }
     

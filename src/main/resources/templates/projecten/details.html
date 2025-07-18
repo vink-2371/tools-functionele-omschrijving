@@ -204,7 +204,7 @@
                     <div class="col-md-4">
                         <div class="d-grid">
                             <form th:if="${!project.documentGegenereerd}"
-                                  th:action="@{/projecten/{id}/document-genereren(id=${project.id})}" 
+                                  th:action="@{/projecten/{id}/genereer-document(id=${project.id})}" 
                                   method="post" style="display: inline;">
                                 <button type="submit" class="btn btn-success btn-lg w-100">
                                     <i class="fas fa-file-download me-2"></i>

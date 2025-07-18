@@ -4,7 +4,6 @@ import java.security.Principal;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -17,25 +16,27 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import jakarta.validation.Valid;
 import nl.vink.func_omschr.model.Project;
+import nl.vink.func_omschr.service.DocumentService;
 import nl.vink.func_omschr.service.ProjectService;
 
 @Controller
 @RequestMapping("/projecten")
 public class ProjectController {
     
-    @Autowired
-    private ProjectService projectService;
+    private final ProjectService projectService;
+    
+    private final DocumentService documentService;
+
+    public ProjectController(ProjectService projectService, DocumentService documentService) {
+        this.projectService = projectService;
+        this.documentService = documentService;
+    }
     
     // Overzichtspagina met alle projecten
     @GetMapping
     public String projectOverzicht(Model model) {
         try {
             List<Project> projecten = projectService.getAlleProjecten();
-            
-            // Zorg ervoor dat projecten nooit null is
-            if (projecten == null) {
-                projecten = new ArrayList<>();
-            }
             
             // Tel projecten voor statistieken
             long projectenMetDocument = projecten.stream()
@@ -166,17 +167,32 @@ public class ProjectController {
         return "redirect:/projecten";
     }
     
-    // Document genereren (placeholder voor later)
-    @PostMapping("/{id}/document-genereren")
+    @PostMapping("/{id}/genereer-document")
     public String genereerDocument(@PathVariable Long id, RedirectAttributes redirectAttributes) {
-        Project project = projectService.vindProjectById(id);
         
-        // TODO: Hier komt later de document generatie logica
-        project.markeerDocumentAlsGegenereerd();
-        projectService.bijwerkenProject(project);
+        System.out.println("Document wordt gegenereerd.");
+        System.out.println("ID: " + id);
         
-        redirectAttributes.addFlashAttribute("successMessage", 
-            "Document wordt gegenereerd! (Dit is nog een placeholder)");
+        // DEBUG: Check of DocumentService bestaat
+        if (documentService == null) {
+            System.out.println("ERROR: DocumentService is NULL!");
+            redirectAttributes.addFlashAttribute("errorMessage", "DocumentService niet beschikbaar");
+            return "redirect:/projecten/" + id;
+        }
+        System.out.println("DocumentService is OK");
+
+        try {
+            // Genereer document via DocumentService
+            String bestandsnaam = documentService.genereerDocument(id);
+            
+            redirectAttributes.addFlashAttribute("successMessage", 
+                "Document '" + bestandsnaam + "' is succesvol gegenereerd! " +
+                "Het document is opgeslagen in: C:\\Users\\sander.nales\\OneDrive - Vink\\Bureaublad\\installatie_omschrijvingen");
+            
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage", 
+                "Fout bij genereren document: " + e.getMessage());
+        }
         
         return "redirect:/projecten/" + id;
     }
