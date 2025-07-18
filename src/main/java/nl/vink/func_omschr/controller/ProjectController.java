@@ -183,11 +183,11 @@ public class ProjectController {
 
         try {
             // Genereer document via DocumentService
-            // String bestandsnaam = documentService.genereerDocument(id);
-            redirectAttributes.addFlashAttribute("successMessage", "Document generatie tijdelijk uitgeschakeld voor Azure test");
+            String bestandsnaam = documentService.genereerDocument(id);
+            // redirectAttributes.addFlashAttribute("successMessage", "Document generatie tijdelijk uitgeschakeld voor Azure test");
             
             redirectAttributes.addFlashAttribute("successMessage", 
-                "Document '" + "<bestandsnaam>" + "' is succesvol gegenereerd! " +
+                "Document '" + bestandsnaam + "' is succesvol gegenereerd! " +
                 "Het document is opgeslagen in: C:\\Users\\sander.nales\\OneDrive - Vink\\Bureaublad\\installatie_omschrijvingen");
             
         } catch (Exception e) {
