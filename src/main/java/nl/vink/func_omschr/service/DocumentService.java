@@ -31,7 +31,7 @@ public class DocumentService {
     private ProjectService projectService;
     
     private final ObjectMapper objectMapper = new ObjectMapper();
-    private final String DOCUMENT_OUTPUT_PATH = "/tmp/documents";
+    private final String DOCUMENT_OUTPUT_PATH = "C:\Users\sander.nales\OneDrive - Vink\Bureaublad\installatie_omschrijvingen";
     
     /**
      * Genereert een Word document voor een project
