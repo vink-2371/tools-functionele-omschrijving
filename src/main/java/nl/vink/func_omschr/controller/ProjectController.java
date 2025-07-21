@@ -170,31 +170,41 @@ public class ProjectController {
     @PostMapping("/{id}/genereer-document")
     public String genereerDocument(@PathVariable Long id, RedirectAttributes redirectAttributes) {
         
-        System.out.println("Document wordt gegenereerd.");
-        System.out.println("ID: " + id);
+        System.out.println("=== DOCUMENT GENERATIE START ===");
+        System.out.println("Project ID: " + id);
         
-        // DEBUG: Check of DocumentService bestaat
-        if (documentService == null) {
-            System.out.println("ERROR: DocumentService is NULL!");
-            redirectAttributes.addFlashAttribute("errorMessage", "DocumentService niet beschikbaar");
-            return "redirect:/projecten/" + id;
-        }
-        System.out.println("DocumentService is OK");
-
         try {
-            // Genereer document via DocumentService
+            // Stap 1: Check of services beschikbaar zijn
+            if (documentService == null) {
+                System.err.println("ERROR: DocumentService is NULL!");
+                redirectAttributes.addFlashAttribute("errorMessage", "DocumentService niet beschikbaar");
+                return "redirect:/projecten/" + id;
+            }
+            System.out.println("✓ DocumentService beschikbaar");
+            
+            // Stap 2: Check project
+            Project project = projectService.vindProjectById(id);
+            System.out.println("✓ Project gevonden: " + project.getProjectNaam() + " (" + project.getProjectNummer() + ")");
+            
+            // Stap 3: Genereer document
+            System.out.println("Starting document generation...");
             String bestandsnaam = documentService.genereerDocument(id);
-            // redirectAttributes.addFlashAttribute("successMessage", "Document generatie tijdelijk uitgeschakeld voor Azure test");
+            System.out.println("✓ Document gegenereerd: " + bestandsnaam);
             
             redirectAttributes.addFlashAttribute("successMessage", 
-                "Document '" + bestandsnaam + "' is succesvol gegenereerd! " +
-                "Het document is opgeslagen in: C:\\Users\\sander.nales\\OneDrive - Vink\\Bureaublad\\installatie_omschrijvingen");
+                "✅ Document '" + bestandsnaam + "' is succesvol gegenereerd en opgeslagen in SharePoint!");
             
         } catch (Exception e) {
+            System.err.println("=== DOCUMENT GENERATIE ERROR ===");
+            System.err.println("Error type: " + e.getClass().getSimpleName());
+            System.err.println("Error message: " + e.getMessage());
+            e.printStackTrace();
+            
             redirectAttributes.addFlashAttribute("errorMessage", 
-                "Fout bij genereren document: " + e.getMessage());
+                "❌ Fout bij genereren document: " + e.getMessage());
         }
         
+        System.out.println("=== DOCUMENT GENERATIE END ===");
         return "redirect:/projecten/" + id;
     }
 }
