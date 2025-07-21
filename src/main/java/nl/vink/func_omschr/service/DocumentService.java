@@ -1,7 +1,6 @@
 package nl.vink.func_omschr.service;
 
-import java.io.File;
-import java.io.FileOutputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -30,32 +29,46 @@ public class DocumentService {
     @Autowired
     private ProjectService projectService;
     
+    @Autowired
+    private SharePointService sharePointService;
+    
     private final ObjectMapper objectMapper = new ObjectMapper();
-    private final String DOCUMENT_OUTPUT_PATH = "C:\\Users\\sander.nales\\OneDrive - Vink\\Bureaublad\\installatie_omschrijvingen";
     
     /**
-     * Genereert een Word document voor een project
+     * Genereert een Word document voor een project en upload naar SharePoint
      */
     public String genereerDocument(Long projectId) throws Exception {
-        System.out.println("Project proberen op te halen met id: " + projectId);
+        System.out.println("Document genereren voor project ID: " + projectId);
+        
         // 1. Haal project op
         Project project = projectService.vindProjectById(projectId);
-        System.out.println(project);
+        System.out.println("Project opgehaald: " + project.getProjectNaam());
 
         // 2. Maak JSON configuratie
         String configuratieJson = maakTijdelijkeConfiguratie(project);
 
         // 3. Parse JSON
         JsonNode configuratie = objectMapper.readTree(configuratieJson);
-        System.out.println(configuratie);
 
-        // 4. Genereer Word document
-        String bestandsnaam = genereersWordDocument(configuratie);
-        System.out.println(bestandsnaam);
+        // 4. Genereer Word document IN MEMORY
+        byte[] documentBytes = genereersWordDocumentBytes(configuratie);
+        String bestandsnaam = genereerBestandsnaam(configuratie);
+        
+        System.out.println("Document gegenereerd in memory: " + bestandsnaam + 
+                          " (grootte: " + documentBytes.length + " bytes)");
 
-        // 5. Update project in database
+        // 5. Upload naar SharePoint
+        String sharePointUrl = sharePointService.uploadDocument(
+            documentBytes, 
+            bestandsnaam, 
+            project.getProjectNummer()
+        );
+        
+        System.out.println("Document geüpload naar SharePoint: " + sharePointUrl);
+
+        // 6. Update project in database met SharePoint details
         project.setConfiguratieJson(configuratieJson);
-        project.markeerDocumentAlsGegenereerd();
+        project.markeerDocumentAlsGegenereerd(sharePointUrl, bestandsnaam, (long) documentBytes.length);
         projectService.bijwerkenProject(project);
         
         return bestandsnaam;
@@ -73,7 +86,6 @@ public class DocumentService {
         configuratie.put("aanmaak_datum_document", LocalDateTime.now().toString());
         
         // Meerkeuze velden - voor nu tijdelijke waarden
-        // Later halen we dit uit de echte configuratie JSON
         if (project.getConfiguratieJson() != null && !project.getConfiguratieJson().isEmpty()) {
             try {
                 JsonNode bestaandeConfig = objectMapper.readTree(project.getConfiguratieJson());
@@ -110,10 +122,12 @@ public class DocumentService {
     }
     
     /**
-     * Genereert het Word document met Apache POI
+     * Genereert het Word document als byte array (in memory)
      */
-    private String genereersWordDocument(JsonNode configuratie) throws IOException {
-        try (XWPFDocument document = new XWPFDocument()) {
+    private byte[] genereersWordDocumentBytes(JsonNode configuratie) throws IOException {
+        try (XWPFDocument document = new XWPFDocument();
+             ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+            
             // Header/Titel
             XWPFParagraph titel = document.createParagraph();
             XWPFRun titelRun = titel.createRun();
@@ -227,23 +241,9 @@ public class DocumentService {
             footerRun.setFontFamily("Arial");
             footerRun.setItalic(true);
             
-            // Bestand opslaan
-            String bestandsnaam = genereerBestandsnaam(configuratie);
-            String volledigPad = DOCUMENT_OUTPUT_PATH + File.separator + bestandsnaam;
-            
-            // Zorg ervoor dat de directory bestaat
-            File directory = new File(DOCUMENT_OUTPUT_PATH);
-            if (!directory.exists()) {
-                directory.mkdirs();
-            }
-            
-            // Sla bestand op
-            try (FileOutputStream out = new FileOutputStream(volledigPad)) {
-                document.write(out);
-            }
-            
-            return bestandsnaam;
-            
+            // Schrijf document naar ByteArrayOutputStream
+            document.write(out);
+            return out.toByteArray();
         }
     }
     
