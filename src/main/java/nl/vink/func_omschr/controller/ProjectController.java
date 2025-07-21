@@ -24,11 +24,11 @@ public class ProjectController {
     
     private final ProjectService projectService;
     
-    // private final DocumentService documentService;
+    private final DocumentService documentService;
 
-    public ProjectController(ProjectService projectService) { // DocumentService documentService
+    public ProjectController(ProjectService projectService, DocumentService documentService) {
         this.projectService = projectService;
-        // this.documentService = documentService;
+        this.documentService = documentService;
     }
     
     // Overzichtspagina met alle projecten
@@ -181,7 +181,7 @@ public class ProjectController {
         System.out.println("DocumentService is OK");
 
         try {
-            Genereer document via DocumentService
+            // Genereer document via DocumentService
             String bestandsnaam = documentService.genereerDocument(id);
             // redirectAttributes.addFlashAttribute("successMessage", "Document generatie tijdelijk uitgeschakeld voor Azure test");
             
