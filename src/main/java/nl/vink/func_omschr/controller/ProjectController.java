@@ -172,21 +172,21 @@ public class ProjectController {
         System.out.println("Document wordt gegenereerd.");
         System.out.println("ID: " + id);
         
-        // // DEBUG: Check of DocumentService bestaat
-        // if (documentService == null) {
-        //     System.out.println("ERROR: DocumentService is NULL!");
-        //     redirectAttributes.addFlashAttribute("errorMessage", "DocumentService niet beschikbaar");
-        //     return "redirect:/projecten/" + id;
-        // }
-        // System.out.println("DocumentService is OK");
+        // DEBUG: Check of DocumentService bestaat
+        if (documentService == null) {
+            System.out.println("ERROR: DocumentService is NULL!");
+            redirectAttributes.addFlashAttribute("errorMessage", "DocumentService niet beschikbaar");
+            return "redirect:/projecten/" + id;
+        }
+        System.out.println("DocumentService is OK");
 
         try {
-            // Genereer document via DocumentService
-            // String bestandsnaam = documentService.genereerDocument(id);
-            redirectAttributes.addFlashAttribute("successMessage", "Document generatie tijdelijk uitgeschakeld voor Azure test");
+            Genereer document via DocumentService
+            String bestandsnaam = documentService.genereerDocument(id);
+            // redirectAttributes.addFlashAttribute("successMessage", "Document generatie tijdelijk uitgeschakeld voor Azure test");
             
             redirectAttributes.addFlashAttribute("successMessage", 
-                "Document '" + "<bestandsnaam>" + "' is succesvol gegenereerd! " +
+                "Document '" + bestandsnaam + "' is succesvol gegenereerd! " +
                 "Het document is opgeslagen in: C:\\Users\\sander.nales\\OneDrive - Vink\\Bureaublad\\installatie_omschrijvingen");
             
         } catch (Exception e) {
