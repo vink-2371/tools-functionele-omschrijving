@@ -38,11 +38,8 @@ public class DocumentService {
      * Genereert een Word document voor een project en upload naar SharePoint
      */
     public String genereerDocument(Long projectId) throws Exception {
-        System.out.println("Document genereren voor project ID: " + projectId);
-        
         // 1. Haal project op
         Project project = projectService.vindProjectById(projectId);
-        System.out.println("Project opgehaald: " + project.getProjectNaam());
 
         // 2. Maak JSON configuratie
         String configuratieJson = maakTijdelijkeConfiguratie(project);
@@ -53,9 +50,6 @@ public class DocumentService {
         // 4. Genereer Word document IN MEMORY
         byte[] documentBytes = genereersWordDocumentBytes(configuratie);
         String bestandsnaam = genereerBestandsnaam(configuratie);
-        
-        System.out.println("Document gegenereerd in memory: " + bestandsnaam + 
-                          " (grootte: " + documentBytes.length + " bytes)");
 
         // 5. Upload naar SharePoint
         String sharePointUrl = sharePointService.uploadDocument(
@@ -63,8 +57,6 @@ public class DocumentService {
             bestandsnaam, 
             project.getProjectNummer()
         );
-        
-        System.out.println("Document geüpload naar SharePoint: " + sharePointUrl);
 
         // 6. Update project in database met SharePoint details
         project.setConfiguratieJson(configuratieJson);

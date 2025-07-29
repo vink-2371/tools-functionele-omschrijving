@@ -4,6 +4,8 @@ import java.security.Principal;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -19,6 +21,7 @@ import jakarta.validation.Valid;
 import nl.vink.func_omschr.model.Project;
 import nl.vink.func_omschr.service.DocumentService;
 import nl.vink.func_omschr.service.ProjectService;
+import nl.vink.func_omschr.service.SharePointService;
 
 @Controller
 @RequestMapping("/projecten")
@@ -26,19 +29,22 @@ public class ProjectController {
     
     private final ProjectService projectService;
     private final DocumentService documentService;
+    private final SharePointService sharePointService;
 
-    public ProjectController(ProjectService projectService, DocumentService documentService) { 
+    public ProjectController(ProjectService projectService, DocumentService documentService, SharePointService sharePointService) {
         this.projectService = projectService;
         this.documentService = documentService;
+        this.sharePointService = sharePointService;
     }
     
-    // Overzichtspagina met alle projecten
+    /**
+     * Overzichtspagina met alle projecten
+     */
     @GetMapping
     public String projectOverzicht(Model model) {
         try {
             List<Project> projecten = projectService.getAlleProjecten();
             
-            // Tel projecten voor statistieken
             long projectenMetDocument = projecten.stream()
                     .filter(Project::isDocumentGegenereerd)
                     .count();
@@ -47,7 +53,6 @@ public class ProjectController {
                     .filter(p -> !p.isDocumentGegenereerd())
                     .count();
             
-            // Voeg data toe aan model
             model.addAttribute("projecten", projecten);
             model.addAttribute("projectenMetDocument", projectenMetDocument);
             model.addAttribute("projectenZonderDocument", projectenZonderDocument);
@@ -55,7 +60,6 @@ public class ProjectController {
             return "projecten/overzicht";
             
         } catch (Exception e) {
-            // Fallback: lege data bij fout
             model.addAttribute("projecten", new ArrayList<>());
             model.addAttribute("projectenMetDocument", 0L);
             model.addAttribute("projectenZonderDocument", 0L);
@@ -63,14 +67,18 @@ public class ProjectController {
         }
     }
     
-    // Toon formulier voor nieuw project
+    /**
+     * Toon formulier voor nieuw project
+     */
     @GetMapping("/nieuw")
     public String nieuwProjectFormulier(Model model) {
         model.addAttribute("project", new Project());
         return "projecten/nieuw";
     }
     
-    // Verwerk nieuw project formulier
+    /**
+     * Verwerk nieuw project formulier
+     */
     @PostMapping("/nieuw")
     public String nieuwProjectOpslaan(@Valid @ModelAttribute("project") Project project, 
                                      BindingResult bindingResult,
@@ -78,7 +86,6 @@ public class ProjectController {
                                      RedirectAttributes redirectAttributes,
                                      Model model) {
         
-        // Controleer of projectnummer al bestaat
         if (projectService.projectNummerBestaat(project.getProjectNummer())) {
             bindingResult.rejectValue("projectNummer", "error.project", 
                 "Dit projectnummer bestaat al. Kies een ander nummer.");
@@ -88,7 +95,6 @@ public class ProjectController {
             return "projecten/nieuw";
         }
         
-        // Zet gebruiker email als bekend
         if (principal != null) {
             project.setGebruikerEmail(principal.getName());
         }
@@ -98,11 +104,12 @@ public class ProjectController {
         redirectAttributes.addFlashAttribute("successMessage", 
             "Project '" + opgeslagenProject.getProjectNaam() + "' is succesvol aangemaakt!");
         
-        // Redirect naar volgende stap in vragenlijst
         return "redirect:/projecten/" + opgeslagenProject.getId() + "/configuratie";
     }
     
-    // Toon project details
+    /**
+     * Toon project details
+     */
     @GetMapping("/{id}")
     public String projectDetails(@PathVariable Long id, Model model) {
         Project project = projectService.vindProjectById(id);
@@ -110,18 +117,44 @@ public class ProjectController {
         return "projecten/details";
     }
     
-    // Configuratie stap (hier komen later de technische vragen)
+    /**
+     * Configuratie stap
+     */
     @GetMapping("/{id}/configuratie")
     public String projectConfiguratie(@PathVariable Long id, Model model) {
         Project project = projectService.vindProjectById(id);
         model.addAttribute("project", project);
-        
-        // TODO: Hier komen later de dynamische vragen
-        // Voor nu tonen we gewoon de project details
         return "projecten/configuratie";
     }
     
-    // Bewerk project
+    /**
+     * Opslaan configuratie
+     */
+    @PostMapping("/{id}/configuratie")
+    public String opslaanConfiguratie(@PathVariable Long id, 
+                                    @RequestParam String configuratieJson,
+                                    RedirectAttributes redirectAttributes) {
+        try {
+            Project project = projectService.vindProjectById(id);
+            projectService.opslaanConfiguratie(id, configuratieJson);
+            
+            redirectAttributes.addFlashAttribute("successMessage", 
+                "Project '" + project.getProjectNaam() + "' is succesvol geconfigureerd! " +
+                "Je kunt nu het document genereren via de project details.");
+            
+            return "redirect:/projecten";
+            
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage", 
+                "Fout bij opslaan configuratie: " + e.getMessage());
+            
+            return "redirect:/projecten/" + id + "/configuratie";
+        }
+    }
+    
+    /**
+     * Bewerk project
+     */
     @GetMapping("/{id}/bewerken")
     public String bewerkProject(@PathVariable Long id, Model model) {
         Project project = projectService.vindProjectById(id);
@@ -139,7 +172,6 @@ public class ProjectController {
             return "projecten/bewerken";
         }
         
-        // Controleer of projectnummer uniek is (behalve voor huidig project)
         if (projectService.projectNummerBestaatVoorAnderProject(project.getProjectNummer(), id)) {
             bindingResult.rejectValue("projectNummer", "error.project", 
                 "Dit projectnummer wordt al gebruikt door een ander project.");
@@ -155,7 +187,9 @@ public class ProjectController {
         return "redirect:/projecten/" + id;
     }
     
-    // Verwijder project
+    /**
+     * Verwijder project
+     */
     @PostMapping("/{id}/verwijderen")
     public String verwijderProject(@PathVariable Long id, RedirectAttributes redirectAttributes) {
         Project project = projectService.vindProjectById(id);
@@ -167,63 +201,78 @@ public class ProjectController {
         return "redirect:/projecten";
     }
     
+    /**
+     * Genereer document
+     */
     @PostMapping("/{id}/genereer-document")
-    @SuppressWarnings("CallToPrintStackTrace")
     public String genereerDocument(@PathVariable Long id, RedirectAttributes redirectAttributes) {
         
-        System.out.println("Document wordt gegenereerd voor project: " + id);
-
         try {
-            // ECHTE IMPLEMENTATIE - niet meer uitgecommentarieerd!
             String bestandsnaam = documentService.genereerDocument(id);
             
             redirectAttributes.addFlashAttribute("successMessage", 
                 "Document '" + bestandsnaam + "' is succesvol gegenereerd en geüpload naar SharePoint!");
             
         } catch (Exception e) {
-            System.err.println("Fout bij genereren document: " + e.getMessage());
-            e.printStackTrace();
-            
             redirectAttributes.addFlashAttribute("errorMessage", 
                 "Fout bij genereren document: " + e.getMessage());
         }
         
         return "redirect:/projecten/" + id;
     }
-
-    @PostMapping("/{id}/configuratie")
-    @SuppressWarnings("CallToPrintStackTrace")
-    public String opslaanConfiguratie(@PathVariable Long id, 
-                                    @RequestParam String configuratieJson,
-                                    RedirectAttributes redirectAttributes) {
+    
+    /**
+     * Download document
+     */
+    @GetMapping("/{id}/document-download")
+    public ResponseEntity<?> downloadDocument(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+        
         try {
-            System.out.println("=== CONFIGURATIE OPSLAAN ===");
-            System.out.println("Project ID: " + id);
-            System.out.println("Configuratie JSON: " + configuratieJson);
-            
-            // Haal project op
             Project project = projectService.vindProjectById(id);
-            System.out.println("Project gevonden: " + project.getProjectNaam());
             
-            // Sla configuratie op
-            Project bijgewerktProject = projectService.opslaanConfiguratie(id, configuratieJson);
-            System.out.println("Configuratie opgeslagen voor project: " + bijgewerktProject.getProjectNaam());
+            if (!project.isDocumentGegenereerd() || project.getDocumentSharepointUrl() == null) {
+                redirectAttributes.addFlashAttribute("errorMessage", 
+                    "Er is nog geen document gegenereerd voor dit project.");
+                
+                return ResponseEntity.status(302)
+                        .header("Location", "/projecten/" + id)
+                        .build();
+            }
             
-            redirectAttributes.addFlashAttribute("successMessage", 
-                "Project '" + project.getProjectNaam() + "' is succesvol geconfigureerd! " +
-                "Je kunt nu het document genereren via de project details.");
+            String documentUrl = project.getDocumentSharepointUrl();
             
-            System.out.println("Redirect naar projectoverzicht");
-            return "redirect:/projecten";
+            if (!sharePointService.isDocumentAvailable(documentUrl)) {
+                redirectAttributes.addFlashAttribute("warningMessage", 
+                    "Het document wordt nog verwerkt door SharePoint. Probeer het over een paar minuten opnieuw.");
+                
+                return ResponseEntity.status(302)
+                        .header("Location", "/projecten/" + id)
+                        .build();
+            }
+            
+            byte[] documentBytes = sharePointService.downloadDocument(documentUrl);
+            
+            if (documentBytes == null || documentBytes.length == 0) {
+                throw new Exception("Document is leeg of niet gevonden");
+            }
+            
+            String filename = project.getDocumentBestandsnaam();
+            if (filename == null || filename.isEmpty()) {
+                filename = "Functionele_Omschrijving_" + project.getProjectNummer() + ".docx";
+            }
+            
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
+                    .header(HttpHeaders.CONTENT_TYPE, "application/vnd.openxmlformats-officedocument.wordprocessingml.document")
+                    .body(documentBytes);
             
         } catch (Exception e) {
-            System.err.println("Fout bij opslaan configuratie: " + e.getMessage());
-            e.printStackTrace();
-            
             redirectAttributes.addFlashAttribute("errorMessage", 
-                "Fout bij opslaan configuratie: " + e.getMessage());
+                "Fout bij downloaden document: Het document is mogelijk nog niet klaar. Probeer het over een paar minuten opnieuw.");
             
-            return "redirect:/projecten/" + id + "/configuratie";
+            return ResponseEntity.status(302)
+                    .header("Location", "/projecten/" + id)
+                    .build();
         }
     }
 }
