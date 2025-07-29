@@ -134,15 +134,7 @@ public class SharePointService {
             
             String downloadUrl = convertWebUrlToDownloadUrl(documentUrl);
             
-            HttpHeaders headers = new HttpHeaders();
-            headers.set("Authorization", "Bearer " + accessToken);
-            
-            HttpEntity<String> request = new HttpEntity<>(headers);
-            
-            ResponseEntity<String> response = restTemplate.exchange(
-                downloadUrl, HttpMethod.HEAD, request, String.class);
-            
-            return response.getStatusCode().is2xxSuccessful();
+            return testDownloadUrl(downloadUrl);
             
         } catch (Exception e) {
             return false;
@@ -317,11 +309,130 @@ public class SharePointService {
      * Converteert SharePoint web URL naar download URL
      */
     private String convertWebUrlToDownloadUrl(String webUrl) throws Exception {
+        try {
+            // SharePoint geeft ons een _layouts URL met sourcedoc parameter
+            // Bijvoorbeeld: https://site/_layouts/15/Doc.aspx?sourcedoc={GUID}&file=filename.docx
+            
+            if (webUrl.contains("_layouts/15/Doc.aspx") && webUrl.contains("sourcedoc=")) {
+                return convertLayoutsUrlToDownloadUrl(webUrl);
+            } else if (webUrl.contains("/Gedeelde documenten/") || webUrl.contains("/Shared Documents/")) {
+                return convertDirectUrlToDownloadUrl(webUrl);
+            } else {
+                throw new Exception("Onbekend SharePoint URL formaat: " + webUrl);
+            }
+            
+        } catch (Exception e) {
+            throw new Exception("Fout bij converteren download URL: " + e.getMessage(), e);
+        }
+    }
+    
+    /**
+     * Converteer _layouts URL naar Graph API download URL
+     */
+    private String convertLayoutsUrlToDownloadUrl(String layoutsUrl) throws Exception {
+        // Extract filename from URL
+        String filename = null;
+        if (layoutsUrl.contains("&file=")) {
+            String[] parts = layoutsUrl.split("&file=");
+            if (parts.length > 1) {
+                filename = parts[1].split("&")[0]; // Neem eerste deel voor volgende &
+                filename = java.net.URLDecoder.decode(filename, "UTF-8");
+            }
+        }
+        
+        if (filename == null) {
+            throw new Exception("Kan bestandsnaam niet extraheren uit URL: " + layoutsUrl);
+        }
+        
+        // Zorg dat we drive ID hebben
+        if (driveId == null) {
+            driveId = getDriveId();
+        }
+        
+        // Zoek het bestand in de Functionele Omschrijvingen folder
+        return findFileInFunctioneleOmschrijvingen(filename);
+    }
+    
+    /**
+     * Zoek een bestand in de Functionele Omschrijvingen folder
+     */
+    private String findFileInFunctioneleOmschrijvingen(String filename) throws Exception {
+        
+        // Probeer eerst direct pad
+        String directPath = "https://graph.microsoft.com/v1.0/drives/" + driveId + 
+                           "/root:/Functionele Omschrijvingen/" + filename + ":/content";
+        
+        if (testDownloadUrl(directPath)) {
+            return directPath;
+        }
+        
+        // Als dat niet werkt, zoek in subfolders
+        String searchUrl = "https://graph.microsoft.com/v1.0/drives/" + driveId + 
+                          "/root:/Functionele Omschrijvingen:/children";
+        
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("Authorization", "Bearer " + accessToken);
+        HttpEntity<String> request = new HttpEntity<>(headers);
+        
+        try {
+            ResponseEntity<String> response = restTemplate.exchange(
+                searchUrl, HttpMethod.GET, request, String.class);
+            
+            JsonNode folderContents = objectMapper.readTree(response.getBody());
+            JsonNode items = folderContents.get("value");
+            
+            // Zoek in alle subfolders
+            for (JsonNode item : items) {
+                if (item.has("folder")) {
+                    // Dit is een folder, zoek erin
+                    String folderName = item.get("name").asText();
+                    String subfolderPath = "https://graph.microsoft.com/v1.0/drives/" + driveId + 
+                                         "/root:/Functionele Omschrijvingen/" + folderName + "/" + filename + ":/content";
+                    
+                    if (testDownloadUrl(subfolderPath)) {
+                        return subfolderPath;
+                    }
+                }
+            }
+            
+            throw new Exception("Bestand '" + filename + "' niet gevonden in Functionele Omschrijvingen folder");
+            
+        } catch (Exception e) {
+            throw new Exception("Fout bij zoeken naar bestand: " + e.getMessage(), e);
+        }
+    }
+    
+    /**
+     * Test of een download URL werkt
+     */
+    @SuppressWarnings("UseSpecificCatch")
+    private boolean testDownloadUrl(String downloadUrl) {
+        try {
+            HttpHeaders headers = new HttpHeaders();
+            headers.set("Authorization", "Bearer " + accessToken);
+            HttpEntity<String> request = new HttpEntity<>(headers);
+            
+            ResponseEntity<String> response = restTemplate.exchange(
+                downloadUrl, HttpMethod.HEAD, request, String.class);
+            
+            return response.getStatusCode().is2xxSuccessful();
+        } catch (Exception e) {
+            return false;
+        }
+    }
+    
+    /**
+     * Converteer directe SharePoint URL naar download URL (bestaande methode)
+     */
+    private String convertDirectUrlToDownloadUrl(String webUrl) throws Exception {
         String decodedUrl = java.net.URLDecoder.decode(webUrl, "UTF-8");
         
         String[] urlParts = decodedUrl.split("/Gedeelde documenten/");
         if (urlParts.length != 2) {
-            throw new Exception("Kan bestandspad niet extraheren uit URL");
+            urlParts = decodedUrl.split("/Shared Documents/");
+            if (urlParts.length != 2) {
+                throw new Exception("Kan bestandspad niet extraheren uit URL");
+            }
         }
         
         String filePath = urlParts[1];
