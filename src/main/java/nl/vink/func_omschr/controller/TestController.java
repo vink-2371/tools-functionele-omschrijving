@@ -78,12 +78,31 @@ public class TestController {
     }
     
     /**
+     * Debug configuratie
+     */
+    @GetMapping("/debug-config")
+    public ResponseEntity<String> debugConfig() {
+        try {
+            // Haal debug info op via SharePointService
+            String configDebug = sharePointService.getConfigurationDebug();
+            
+            return ResponseEntity.ok(configDebug);
+            
+        } catch (Exception e) {
+            return ResponseEntity.ok("❌ Fout bij ophalen configuratie debug: " + e.getMessage());
+        }
+    }
+    
+    /**
      * Toon configuratie (zonder gevoelige data)
      */
     @GetMapping("/config")
     public ResponseEntity<String> showConfig() {
         try {
-            return ResponseEntity.ok("Configuration check - zie console logs voor details");
+            return ResponseEntity.ok("""
+                                     Configuration check - zie console logs voor details.
+                                     
+                                     Gebruik /api/test/debug-config voor gedetailleerde configuratie info.""");
         } catch (Exception e) {
             return ResponseEntity.ok("❌ Config error: " + e.getMessage());
         }
