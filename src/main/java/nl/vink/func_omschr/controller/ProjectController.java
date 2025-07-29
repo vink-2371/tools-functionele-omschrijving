@@ -324,6 +324,7 @@ public class ProjectController {
     // Tijdelijke debug endpoint - voeg toe aan ProjectController
 
     @GetMapping("/{id}/debug-download")
+    @SuppressWarnings("UseSpecificCatch")
     public ResponseEntity<String> debugDownload(@PathVariable Long id) {
         StringBuilder debug = new StringBuilder();
         
@@ -419,11 +420,5 @@ public class ProjectController {
         }
         
         return ResponseEntity.ok(debug.toString());
-    }
-
-    // Maak deze methode public in SharePointService voor debugging
-    public String convertWebUrlToDownloadUrl(String webUrl) throws Exception {
-        // Deze methode is nu public voor debug doeleinden
-        return convertWebUrlToDownloadUrl(webUrl);
     }
 }

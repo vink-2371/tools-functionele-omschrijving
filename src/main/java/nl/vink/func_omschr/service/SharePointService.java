@@ -308,7 +308,7 @@ public class SharePointService {
     /**
      * Converteert SharePoint web URL naar download URL
      */
-    private String convertWebUrlToDownloadUrl(String webUrl) throws Exception {
+    public String convertWebUrlToDownloadUrl(String webUrl) throws Exception {
         try {
             // SharePoint geeft ons een _layouts URL met sourcedoc parameter
             // Bijvoorbeeld: https://site/_layouts/15/Doc.aspx?sourcedoc={GUID}&file=filename.docx
