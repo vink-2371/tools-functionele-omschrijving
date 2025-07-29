@@ -328,7 +328,7 @@ public class ProjectController {
         StringBuilder debug = new StringBuilder();
         
         try {
-            debug.append("=== DOWNLOAD DEBUG INFO ===\n\n");
+            debug.append("=== DOWNLOAD DEBUG INFO V2 ===\n\n");
             
             // Stap 1: Project info
             Project project = projectService.vindProjectById(id);
@@ -349,19 +349,59 @@ public class ProjectController {
                 return ResponseEntity.ok(debug.toString());
             }
             
-            // Stap 2: Beschikbaarheid check
-            debug.append("2. BESCHIKBAARHEID CHECK:\n");
-            boolean beschikbaar = sharePointService.isDocumentAvailable(project.getDocumentSharepointUrl());
+            // Stap 2: URL Analysis
+            debug.append("2. URL ANALYSE:\n");
+            String originalUrl = project.getDocumentSharepointUrl();
+            debug.append("   - Originele URL: ").append(originalUrl).append("\n");
+            debug.append("   - URL Type: ");
+            if (originalUrl.contains("_layouts/15/Doc.aspx")) {
+                debug.append("Layouts URL (viewer link)\n");
+            } else if (originalUrl.contains("/Gedeelde documenten/")) {
+                debug.append("Directe document URL\n");
+            } else {
+                debug.append("Onbekend formaat\n");
+            }
+            
+            // Extract filename
+            String filename = project.getDocumentBestandsnaam();
+            if (filename == null && originalUrl.contains("&file=")) {
+                String[] parts = originalUrl.split("&file=");
+                if (parts.length > 1) {
+                    filename = parts[1].split("&")[0];
+                    try {
+                        filename = java.net.URLDecoder.decode(filename, "UTF-8");
+                    } catch (Exception e) {}
+                }
+            }
+            debug.append("   - Extracted filename: ").append(filename).append("\n\n");
+            
+            // Stap 3: Download URL Conversie
+            debug.append("3. DOWNLOAD URL CONVERSIE:\n");
+            try {
+                // Test de nieuwe convertWebUrlToDownloadUrl methode
+                String downloadUrl = sharePointService.convertWebUrlToDownloadUrl(originalUrl);
+                debug.append("   - Geconverteerde URL: ").append(downloadUrl).append("\n");
+            } catch (Exception e) {
+                debug.append("   - Conversie gefaald: ").append(e.getMessage()).append("\n");
+            }
+            
+            // Stap 4: Beschikbaarheid check
+            debug.append("\n4. BESCHIKBAARHEID CHECK:\n");
+            boolean beschikbaar = sharePointService.isDocumentAvailable(originalUrl);
             debug.append("   - Document beschikbaar: ").append(beschikbaar).append("\n\n");
             
             if (!beschikbaar) {
                 debug.append("❌ STOP: Document niet beschikbaar\n");
+                debug.append("   Dit kan betekenen:\n");
+                debug.append("   - Document wordt nog verwerkt door SharePoint\n");
+                debug.append("   - URL conversie werkt niet correct\n");
+                debug.append("   - Bestand staat in andere folder dan verwacht\n");
                 return ResponseEntity.ok(debug.toString());
             }
             
-            // Stap 3: Download test
-            debug.append("3. DOWNLOAD TEST:\n");
-            byte[] documentBytes = sharePointService.downloadDocument(project.getDocumentSharepointUrl());
+            // Stap 5: Download test
+            debug.append("5. DOWNLOAD TEST:\n");
+            byte[] documentBytes = sharePointService.downloadDocument(originalUrl);
             debug.append("   - Download grootte: ").append(documentBytes != null ? documentBytes.length : "null").append(" bytes\n");
             
             if (documentBytes == null || documentBytes.length == 0) {
@@ -371,9 +411,19 @@ public class ProjectController {
             }
             
         } catch (Exception e) {
-            debug.append("❌ FOUT: ").append(e.getMessage()).append("\n");
+            debug.append("❌ ALGEMENE FOUT: ").append(e.getMessage()).append("\n");
+            debug.append("Stack trace eerste regel: ");
+            if (e.getStackTrace().length > 0) {
+                debug.append(e.getStackTrace()[0].toString());
+            }
         }
         
         return ResponseEntity.ok(debug.toString());
+    }
+
+    // Maak deze methode public in SharePointService voor debugging
+    public String convertWebUrlToDownloadUrl(String webUrl) throws Exception {
+        // Deze methode is nu public voor debug doeleinden
+        return convertWebUrlToDownloadUrl(webUrl);
     }
 }
