@@ -455,11 +455,11 @@
                         <div class="alert alert-info">
                             <h6>
                                 <i class="fas fa-info-circle me-2"></i>
-                                Volgende stap
+                                Project Opslaan
                             </h6>
                             <p class="mb-0">
-                                Op basis van jouw selecties wordt automatisch een functionele omschrijving gegenereerd 
-                                met de juiste tekstblokken voor de regeltechniek.
+                                Je configuratie wordt opgeslagen en je keert terug naar het projectoverzicht. 
+                                Vanuit de project details kun je vervolgens het document genereren.
                             </p>
                         </div>
                     </div>
@@ -491,8 +491,8 @@
                             
                             <button type="button" id="documentGenererenBtn" class="btn btn-success btn-lg" 
                                     onclick="genereerDocument()" style="display: none;">
-                                <i class="fas fa-file-download me-2"></i>
-                                Document Genereren
+                                <i class="fas fa-save me-2"></i>
+                                Project Opslaan
                             </button>
                         </div>
                     </div>
@@ -769,10 +769,17 @@
         function genereerDocument() {
             const btn = document.getElementById('documentGenererenBtn');
             btn.disabled = true;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Document wordt gegenereerd...';
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Project wordt opgeslagen...';
             
-            // Sla configuratie op
-            console.log('Configuratie:', antwoorden);
+            // Valideer dat alle verplichte vragen beantwoord zijn
+            if (!isConfigurationComplete()) {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-save me-2"></i>Project Opslaan';
+                alert('Vul eerst alle verplichte vragen in voordat je het project kunt opslaan.');
+                return;
+            }
+            
+            console.log('Project opslaan met configuratie:', antwoorden);
             
             // Maak form voor POST request
             const form = document.createElement('form');
@@ -799,6 +806,11 @@
             // Submit form
             document.body.appendChild(form);
             form.submit();
+        }
+
+        function isConfigurationComplete() {
+            // Minimaal vereist: installatie type en aantal units
+            return antwoorden['installatie_type'] && antwoorden['aantal_units'];
         }
     </script>
     

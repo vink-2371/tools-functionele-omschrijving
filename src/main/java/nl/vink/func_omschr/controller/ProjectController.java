@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import jakarta.validation.Valid;
@@ -188,5 +189,41 @@ public class ProjectController {
         }
         
         return "redirect:/projecten/" + id;
+    }
+
+    @PostMapping("/{id}/configuratie")
+    @SuppressWarnings("CallToPrintStackTrace")
+    public String opslaanConfiguratie(@PathVariable Long id, 
+                                    @RequestParam String configuratieJson,
+                                    RedirectAttributes redirectAttributes) {
+        try {
+            System.out.println("=== CONFIGURATIE OPSLAAN ===");
+            System.out.println("Project ID: " + id);
+            System.out.println("Configuratie JSON: " + configuratieJson);
+            
+            // Haal project op
+            Project project = projectService.vindProjectById(id);
+            System.out.println("Project gevonden: " + project.getProjectNaam());
+            
+            // Sla configuratie op
+            Project bijgewerktProject = projectService.opslaanConfiguratie(id, configuratieJson);
+            System.out.println("Configuratie opgeslagen voor project: " + bijgewerktProject.getProjectNaam());
+            
+            redirectAttributes.addFlashAttribute("successMessage", 
+                "Project '" + project.getProjectNaam() + "' is succesvol geconfigureerd! " +
+                "Je kunt nu het document genereren via de project details.");
+            
+            System.out.println("Redirect naar projectoverzicht");
+            return "redirect:/projecten";
+            
+        } catch (Exception e) {
+            System.err.println("Fout bij opslaan configuratie: " + e.getMessage());
+            e.printStackTrace();
+            
+            redirectAttributes.addFlashAttribute("errorMessage", 
+                "Fout bij opslaan configuratie: " + e.getMessage());
+            
+            return "redirect:/projecten/" + id + "/configuratie";
+        }
     }
 }
