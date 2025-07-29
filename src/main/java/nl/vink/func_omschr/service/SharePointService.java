@@ -73,6 +73,7 @@ public class SharePointService {
     /**
      * Haalt nieuwe access token op via Azure AD
      */
+    @SuppressWarnings("UseSpecificCatch")
     private void refreshAccessToken() throws Exception {
         String tokenUrl = "https://login.microsoftonline.com/" + tenantId + "/oauth2/v2.0/token";
         
