@@ -1,10 +1,6 @@
 package nl.vink.func_omschr.service;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
