@@ -108,12 +108,25 @@ public class ProjectController {
     }
     
     /**
-     * Toon project details
+     * Toon project details met URL parameter handling
      */
     @GetMapping("/{id}")
-    public String projectDetails(@PathVariable Long id, Model model) {
+    public String projectDetails(@PathVariable Long id, 
+                            @RequestParam(required = false) String error,
+                            @RequestParam(required = false) String warning,
+                            Model model) {
         Project project = projectService.vindProjectById(id);
         model.addAttribute("project", project);
+        
+        // Voeg error/warning messages toe van URL parameters
+        if (error != null && !error.trim().isEmpty()) {
+            model.addAttribute("errorMessage", error);
+        }
+        
+        if (warning != null && !warning.trim().isEmpty()) {
+            model.addAttribute("warningMessage", warning);
+        }
+        
         return "projecten/details";
     }
     
@@ -222,57 +235,87 @@ public class ProjectController {
     }
     
     /**
-     * Download document
+     * Download document met uitgebreide feedback
      */
     @GetMapping("/{id}/document-download")
-    public ResponseEntity<?> downloadDocument(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+    public ResponseEntity<?> downloadDocument(@PathVariable Long id) {
         
         try {
+            // Stap 1: Project ophalen
             Project project = projectService.vindProjectById(id);
             
+            // Stap 2: Valideren of document bestaat
             if (!project.isDocumentGegenereerd() || project.getDocumentSharepointUrl() == null) {
-                redirectAttributes.addFlashAttribute("errorMessage", 
-                    "Er is nog geen document gegenereerd voor dit project.");
-                
-                return ResponseEntity.status(302)
-                        .header("Location", "/projecten/" + id)
-                        .build();
+                return createErrorRedirect(id, "Er is nog geen document gegenereerd voor dit project.");
             }
             
             String documentUrl = project.getDocumentSharepointUrl();
             
+            // Stap 3: Controleren of document beschikbaar is
             if (!sharePointService.isDocumentAvailable(documentUrl)) {
-                redirectAttributes.addFlashAttribute("warningMessage", 
-                    "Het document wordt nog verwerkt door SharePoint. Probeer het over een paar minuten opnieuw.");
-                
-                return ResponseEntity.status(302)
-                        .header("Location", "/projecten/" + id)
-                        .build();
+                return createWarningRedirect(id, 
+                    "Het document wordt nog verwerkt door SharePoint. " +
+                    "Dit kan enkele minuten duren na het genereren. Probeer het opnieuw.");
             }
             
-            byte[] documentBytes = sharePointService.downloadDocument(documentUrl);
+            // Stap 4: Document downloaden van SharePoint
+            byte[] documentBytes;
+            try {
+                documentBytes = sharePointService.downloadDocument(documentUrl);
+            } catch (Exception downloadEx) {
+                return createErrorRedirect(id, 
+                    "Fout bij ophalen document van SharePoint: " + downloadEx.getMessage() + 
+                    ". Het document is mogelijk nog niet volledig verwerkt.");
+            }
             
+            // Stap 5: Valideren download
             if (documentBytes == null || documentBytes.length == 0) {
-                throw new Exception("Document is leeg of niet gevonden");
+                return createErrorRedirect(id, "Het gedownloade document is leeg. Probeer het document opnieuw te genereren.");
             }
             
+            // Stap 6: Bestandsnaam bepalen
             String filename = project.getDocumentBestandsnaam();
             if (filename == null || filename.isEmpty()) {
-                filename = "Functionele_Omschrijving_" + project.getProjectNummer() + ".docx";
+                filename = "Functionele_Omschrijving_" + 
+                        project.getProjectNummer().replaceAll("[^a-zA-Z0-9-_]", "") + 
+                        ".docx";
             }
             
+            // Stap 7: Document naar browser sturen
             return ResponseEntity.ok()
                     .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
                     .header(HttpHeaders.CONTENT_TYPE, "application/vnd.openxmlformats-officedocument.wordprocessingml.document")
+                    .header(HttpHeaders.CONTENT_LENGTH, String.valueOf(documentBytes.length))
+                    .header(HttpHeaders.CACHE_CONTROL, "no-cache, no-store, must-revalidate")
+                    .header(HttpHeaders.PRAGMA, "no-cache")
+                    .header(HttpHeaders.EXPIRES, "0")
                     .body(documentBytes);
             
         } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("errorMessage", 
-                "Fout bij downloaden document: Het document is mogelijk nog niet klaar. Probeer het over een paar minuten opnieuw.");
-            
-            return ResponseEntity.status(302)
-                    .header("Location", "/projecten/" + id)
-                    .build();
+            // Algemene fout afhandeling
+            return createErrorRedirect(id, 
+                "Onverwachte fout bij downloaden: " + e.getMessage() + 
+                ". Neem contact op met de beheerder als dit probleem aanhoudt.");
         }
+    }
+
+    /**
+     * Helper methode voor error redirects
+     */
+    private ResponseEntity<?> createErrorRedirect(Long projectId, String message) {
+        return ResponseEntity.status(302)
+                .header("Location", "/projecten/" + projectId + "?error=" + 
+                    java.net.URLEncoder.encode(message, java.nio.charset.StandardCharsets.UTF_8))
+                .build();
+    }
+
+    /**
+     * Helper methode voor warning redirects  
+     */
+    private ResponseEntity<?> createWarningRedirect(Long projectId, String message) {
+        return ResponseEntity.status(302)
+                .header("Location", "/projecten/" + projectId + "?warning=" + 
+                    java.net.URLEncoder.encode(message, java.nio.charset.StandardCharsets.UTF_8))
+                .build();
     }
 }

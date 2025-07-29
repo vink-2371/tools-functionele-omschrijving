@@ -74,13 +74,54 @@ public class SharePointService {
         
         HttpEntity<String> request = new HttpEntity<>(headers);
         
-        ResponseEntity<byte[]> response = restTemplate.exchange(
-            downloadUrl, HttpMethod.GET, request, byte[].class);
+        try {
+            ResponseEntity<byte[]> response = restTemplate.exchange(
+                downloadUrl, HttpMethod.GET, request, byte[].class);
+            
+            if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+                return response.getBody();
+            } else {
+                throw new Exception("Download gefaald met status: " + response.getStatusCode());
+            }
+        } catch (Exception e) {
+            throw new Exception("Fout bij downloaden van SharePoint: " + e.getMessage(), e);
+        }
+    }
+    
+    /**
+     * Download een tekstblok (specifiek voor .docx bestanden uit tekstblok folder)
+     */
+    public byte[] downloadTextblok(String filename) throws Exception {
+        ensureValidAccessToken();
         
-        if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
-            return response.getBody();
-        } else {
-            throw new Exception("Document kon niet worden gedownload");
+        if (siteId == null) {
+            siteId = getSiteId();
+        }
+        
+        if (driveId == null) {
+            driveId = getDriveId();
+        }
+        
+        // Tekstblokken staan in: Documenten/Tekstblokken/filename
+        String downloadUrl = "https://graph.microsoft.com/v1.0/drives/" + driveId + 
+                           "/root:/Tekstblokken/" + filename + ":/content";
+        
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("Authorization", "Bearer " + accessToken);
+        
+        HttpEntity<String> request = new HttpEntity<>(headers);
+        
+        try {
+            ResponseEntity<byte[]> response = restTemplate.exchange(
+                downloadUrl, HttpMethod.GET, request, byte[].class);
+            
+            if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+                return response.getBody();
+            } else {
+                throw new Exception("Tekstblok niet gevonden: " + filename);
+            }
+        } catch (Exception e) {
+            throw new Exception("Fout bij ophalen tekstblok '" + filename + "': " + e.getMessage(), e);
         }
     }
     

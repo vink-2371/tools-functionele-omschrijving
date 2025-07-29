@@ -113,6 +113,18 @@
 
     <!-- Main Content -->
     <div class="container">
+        <!-- Error/Warning Messages van URL parameters -->
+        <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            <span th:text="${errorMessage}"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+
+        <div th:if="${warningMessage}" class="alert alert-warning alert-dismissible fade show" role="alert">
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            <span th:text="${warningMessage}"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
         
         <!-- Success Message -->
         <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show" role="alert">
@@ -204,19 +216,22 @@
                     <div class="col-md-4">
                         <div class="d-grid">
                             <form th:if="${!project.documentGegenereerd}"
-                                  th:action="@{/projecten/{id}/genereer-document(id=${project.id})}" 
-                                  method="post" style="display: inline;">
+                                th:action="@{/projecten/{id}/genereer-document(id=${project.id})}" 
+                                method="post" style="display: inline;">
                                 <button type="submit" class="btn btn-success btn-lg w-100">
                                     <i class="fas fa-file-download me-2"></i>
                                     Document Genereren
                                 </button>
                             </form>
-                            <a th:if="${project.documentGegenereerd}"
-                               th:href="@{/projecten/{id}/document-download(id=${project.id})}" 
-                               class="btn btn-success btn-lg">
+                            
+                            <button th:if="${project.documentGegenereerd}"
+                                    type="button"
+                                    class="btn btn-success btn-lg w-100"
+                                    onclick="downloadDocument()"
+                                    id="downloadBtn">
                                 <i class="fas fa-download me-2"></i>
                                 Document Downloaden
-                            </a>
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -257,15 +272,62 @@
     
     <!-- Auto-hide success messages -->
     <script>
-        setTimeout(() => {
-            const alerts = document.querySelectorAll('.alert-success');
-            alerts.forEach(alert => {
+        function downloadDocument() {
+            const btn = document.getElementById('downloadBtn');
+            const originalHtml = btn.innerHTML;
+            
+            // Toon loading state
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Document wordt gedownload...';
+            
+            // Start download
+            const projectId = /*[[${project.id}]]*/ '';
+            const downloadUrl = `/projecten/${projectId}/document-download`;
+            
+            // Maak verborgen link voor download
+            const link = document.createElement('a');
+            link.href = downloadUrl;
+            link.style.display = 'none';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            // Reset button na korte tijd
+            setTimeout(() => {
+                btn.disabled = false;
+                btn.innerHTML = originalHtml;
+            }, 2000);
+            
+            // Toon success message
+            setTimeout(() => {
+                if (!document.querySelector('.alert-danger')) {
+                    showSuccessMessage('Document download gestart! Het bestand zou moeten verschijnen in je downloads.');
+                }
+            }, 1000);
+        }
+
+        function showSuccessMessage(message) {
+            const alertHtml = `
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    <i class="fas fa-check-circle me-2"></i>
+                    ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            `;
+            
+            const container = document.querySelector('.container');
+            const firstChild = container.firstElementChild;
+            firstChild.insertAdjacentHTML('beforebegin', alertHtml);
+            
+            // Auto-hide na 5 seconden
+            setTimeout(() => {
+                const alert = document.querySelector('.alert-success');
                 if (alert) {
                     alert.classList.remove('show');
                     setTimeout(() => alert.remove(), 150);
                 }
-            });
-        }, 5000);
+            }, 5000);
+        }
     </script>
     
 </body>
