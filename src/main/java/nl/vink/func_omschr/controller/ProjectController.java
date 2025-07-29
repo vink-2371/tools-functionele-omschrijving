@@ -16,18 +16,19 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import jakarta.validation.Valid;
 import nl.vink.func_omschr.model.Project;
+import nl.vink.func_omschr.service.DocumentService;
 import nl.vink.func_omschr.service.ProjectService;
+
 @Controller
 @RequestMapping("/projecten")
 public class ProjectController {
     
     private final ProjectService projectService;
-    
-    // private final DocumentService documentService;
+    private final DocumentService documentService;
 
-    public ProjectController(ProjectService projectService) { // DocumentService documentService
+    public ProjectController(ProjectService projectService, DocumentService documentService) { 
         this.projectService = projectService;
-        // this.documentService = documentService;
+        this.documentService = documentService;
     }
     
     // Overzichtspagina met alle projecten
@@ -166,22 +167,22 @@ public class ProjectController {
     }
     
     @PostMapping("/{id}/genereer-document")
+    @SuppressWarnings("CallToPrintStackTrace")
     public String genereerDocument(@PathVariable Long id, RedirectAttributes redirectAttributes) {
-
         
-        System.out.println("Document wordt gegenereerd.");
-        System.out.println("ID: " + id);
+        System.out.println("Document wordt gegenereerd voor project: " + id);
 
         try {
-            // Genereer document via DocumentService
-            // String bestandsnaam = documentService.genereerDocument(id);
-            redirectAttributes.addFlashAttribute("successMessage", "Document generatie tijdelijk uitgeschakeld voor Azure test");
+            // ECHTE IMPLEMENTATIE - niet meer uitgecommentarieerd!
+            String bestandsnaam = documentService.genereerDocument(id);
             
             redirectAttributes.addFlashAttribute("successMessage", 
-                "Document '" + "<bestandsnaam>" + "' is succesvol gegenereerd! " +
-                "Het document is opgeslagen in: C:\\Users\\sander.nales\\OneDrive - Vink\\Bureaublad\\installatie_omschrijvingen");
+                "Document '" + bestandsnaam + "' is succesvol gegenereerd en geüpload naar SharePoint!");
             
         } catch (Exception e) {
+            System.err.println("Fout bij genereren document: " + e.getMessage());
+            e.printStackTrace();
+            
             redirectAttributes.addFlashAttribute("errorMessage", 
                 "Fout bij genereren document: " + e.getMessage());
         }

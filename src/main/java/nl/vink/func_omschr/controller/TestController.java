@@ -19,6 +19,7 @@ public class TestController {
      * Test SharePoint connectie
      */
     @GetMapping("/sharepoint-connection")
+    @SuppressWarnings("CallToPrintStackTrace")
     public ResponseEntity<String> testSharePointConnection() {
         try {
             System.out.println("=== SHAREPOINT CONNECTION TEST START ===");
@@ -49,6 +50,7 @@ public class TestController {
      * Test document upload met dummy bestand
      */
     @GetMapping("/test-upload")
+    @SuppressWarnings("CallToPrintStackTrace")
     public ResponseEntity<String> testDocumentUpload() {
         try {
             System.out.println("=== TEST UPLOAD START ===");

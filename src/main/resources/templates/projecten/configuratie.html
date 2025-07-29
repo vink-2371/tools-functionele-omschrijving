@@ -771,13 +771,34 @@
             btn.disabled = true;
             btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Document wordt gegenereerd...';
             
-            // Sla configuratie op en redirect naar overzicht
-            setTimeout(() => {
-                console.log('Configuratie:', antwoorden);
-                
-                // Redirect naar projectoverzicht met success message
-                window.location.href = '/projecten?documentGegenerated=true';
-            }, 2000);
+            // Sla configuratie op
+            console.log('Configuratie:', antwoorden);
+            
+            // Maak form voor POST request
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = window.location.pathname; // /projecten/{id}/configuratie
+            
+            // CSRF token (als je dat gebruikt)
+            const csrfToken = document.querySelector('meta[name="_csrf"]');
+            if (csrfToken) {
+                const csrfInput = document.createElement('input');
+                csrfInput.type = 'hidden';
+                csrfInput.name = '_csrf';
+                csrfInput.value = csrfToken.getAttribute('content');
+                form.appendChild(csrfInput);
+            }
+            
+            // Configuratie data
+            const configInput = document.createElement('input');
+            configInput.type = 'hidden';
+            configInput.name = 'configuratieJson';
+            configInput.value = JSON.stringify(antwoorden);
+            form.appendChild(configInput);
+            
+            // Submit form
+            document.body.appendChild(form);
+            form.submit();
         }
     </script>
     
