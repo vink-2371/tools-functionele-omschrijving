@@ -318,4 +318,62 @@ public class ProjectController {
                     java.net.URLEncoder.encode(message, java.nio.charset.StandardCharsets.UTF_8))
                 .build();
     }
+
+
+
+    // Tijdelijke debug endpoint - voeg toe aan ProjectController
+
+    @GetMapping("/{id}/debug-download")
+    public ResponseEntity<String> debugDownload(@PathVariable Long id) {
+        StringBuilder debug = new StringBuilder();
+        
+        try {
+            debug.append("=== DOWNLOAD DEBUG INFO ===\n\n");
+            
+            // Stap 1: Project info
+            Project project = projectService.vindProjectById(id);
+            debug.append("1. PROJECT INFO:\n");
+            debug.append("   - ID: ").append(project.getId()).append("\n");
+            debug.append("   - Naam: ").append(project.getProjectNaam()).append("\n");
+            debug.append("   - Document gegenereerd: ").append(project.isDocumentGegenereerd()).append("\n");
+            debug.append("   - SharePoint URL: ").append(project.getDocumentSharepointUrl()).append("\n");
+            debug.append("   - Bestandsnaam: ").append(project.getDocumentBestandsnaam()).append("\n\n");
+            
+            if (!project.isDocumentGegenereerd()) {
+                debug.append("❌ STOP: Geen document gegenereerd\n");
+                return ResponseEntity.ok(debug.toString());
+            }
+            
+            if (project.getDocumentSharepointUrl() == null) {
+                debug.append("❌ STOP: Geen SharePoint URL\n");
+                return ResponseEntity.ok(debug.toString());
+            }
+            
+            // Stap 2: Beschikbaarheid check
+            debug.append("2. BESCHIKBAARHEID CHECK:\n");
+            boolean beschikbaar = sharePointService.isDocumentAvailable(project.getDocumentSharepointUrl());
+            debug.append("   - Document beschikbaar: ").append(beschikbaar).append("\n\n");
+            
+            if (!beschikbaar) {
+                debug.append("❌ STOP: Document niet beschikbaar\n");
+                return ResponseEntity.ok(debug.toString());
+            }
+            
+            // Stap 3: Download test
+            debug.append("3. DOWNLOAD TEST:\n");
+            byte[] documentBytes = sharePointService.downloadDocument(project.getDocumentSharepointUrl());
+            debug.append("   - Download grootte: ").append(documentBytes != null ? documentBytes.length : "null").append(" bytes\n");
+            
+            if (documentBytes == null || documentBytes.length == 0) {
+                debug.append("❌ STOP: Download gefaald of leeg\n");
+            } else {
+                debug.append("✅ SUCCESS: Document kan worden gedownload!\n");
+            }
+            
+        } catch (Exception e) {
+            debug.append("❌ FOUT: ").append(e.getMessage()).append("\n");
+        }
+        
+        return ResponseEntity.ok(debug.toString());
+    }
 }
