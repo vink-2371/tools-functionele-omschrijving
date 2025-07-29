@@ -304,6 +304,106 @@ public class SharePointService {
                               "\nUpload URL: " + uploadUrl, e);
         }
     }
+
+    /**
+     * Download een document van SharePoint
+     * @param documentUrl De SharePoint URL van het document
+     * @return byte array van het document, of null als niet beschikbaar
+     */
+    public byte[] downloadDocument(String documentUrl) throws Exception {
+        System.out.println("=== DOCUMENT DOWNLOAD START ===");
+        System.out.println("Document URL: " + documentUrl);
+        
+        // Zorg voor geldige access token
+        ensureValidAccessToken();
+        
+        try {
+            // Converteer web URL naar download URL
+            String downloadUrl = convertWebUrlToDownloadUrl(documentUrl);
+            System.out.println("Download URL: " + downloadUrl);
+            
+            HttpHeaders headers = new HttpHeaders();
+            headers.set("Authorization", "Bearer " + accessToken);
+            
+            HttpEntity<String> request = new HttpEntity<>(headers);
+            
+            ResponseEntity<byte[]> response = restTemplate.exchange(
+                downloadUrl, HttpMethod.GET, request, byte[].class);
+            
+            if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+                return response.getBody();
+            } else {
+                throw new Exception("Document download gefaald met status: " + response.getStatusCode());
+            }
+            
+        } catch (Exception e) {
+            System.err.println("Fout bij downloaden document: " + e.getMessage());
+            throw new Exception("Document is nog niet beschikbaar of kan niet worden gedownload: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Controleert of een document beschikbaar is op SharePoint
+     */
+    public boolean isDocumentAvailable(String documentUrl) {
+        try {
+            ensureValidAccessToken();
+            
+            String downloadUrl = convertWebUrlToDownloadUrl(documentUrl);
+            
+            HttpHeaders headers = new HttpHeaders();
+            headers.set("Authorization", "Bearer " + accessToken);
+            
+            HttpEntity<String> request = new HttpEntity<>(headers);
+            
+            // Probeer HEAD request om te controleren of bestand bestaat
+            ResponseEntity<String> response = restTemplate.exchange(
+                downloadUrl, HttpMethod.HEAD, request, String.class);
+            
+            return response.getStatusCode().is2xxSuccessful();
+            
+        } catch (Exception e) {
+            System.out.println("Document nog niet beschikbaar: " + e.getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Converteert SharePoint web URL naar download URL
+     * Van: https://vinkinstallatiegroep.sharepoint.com/sites/FunctioneleOmschrijvingen/Gedeelde%20documenten/...
+     * Naar: Graph API download URL
+     */
+    private String convertWebUrlToDownloadUrl(String webUrl) throws Exception {
+        try {
+            // Decode URL
+            String decodedUrl = java.net.URLDecoder.decode(webUrl, "UTF-8");
+            System.out.println("Decoded URL: " + decodedUrl);
+            
+            // Extract file path from SharePoint URL
+            // Format: https://site/Gedeelde documenten/Functionele Omschrijvingen/PROJECT/file.docx
+            String[] urlParts = decodedUrl.split("/Gedeelde documenten/");
+            if (urlParts.length != 2) {
+                throw new Exception("Kan bestandspad niet extraheren uit URL: " + decodedUrl);
+            }
+            
+            String filePath = urlParts[1]; // Functionele Omschrijvingen/PROJECT/file.docx
+            System.out.println("File path: " + filePath);
+            
+            // Zorg dat we drive ID hebben
+            if (driveId == null) {
+                driveId = getDriveId();
+            }
+            
+            // Bouw Graph API download URL
+            String downloadUrl = "https://graph.microsoft.com/v1.0/drives/" + driveId + 
+                            "/root:/" + filePath + ":/content";
+            
+            return downloadUrl;
+            
+        } catch (Exception e) {
+            throw new Exception("Fout bij converteren download URL: " + e.getMessage(), e);
+        }
+    }
     
     /**
      * Extraheert hostname uit SharePoint URL
