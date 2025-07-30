@@ -9,6 +9,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -62,10 +63,11 @@ public class SharePointService {
     }
     
     /**
-     * Download een document van SharePoint
+     * Download een document van SharePoint - GEFIXTE VERSIE
      */
     public byte[] downloadDocument(String documentUrl) throws Exception {
-        ensureValidAccessToken();
+        // Zorg voor complete initialisatie
+        ensureFullInitialization();
         
         String downloadUrl = convertWebUrlToDownloadUrl(documentUrl);
         
@@ -85,6 +87,24 @@ public class SharePointService {
             }
         } catch (Exception e) {
             throw new Exception("Fout bij downloaden van SharePoint: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Zorgt voor complete initialisatie van alle vereiste variabelen
+     */
+    private void ensureFullInitialization() throws Exception {
+        // Zorg voor geldige access token
+        ensureValidAccessToken();
+        
+        // Zorg voor site ID
+        if (siteId == null || siteId.trim().isEmpty()) {
+            siteId = getSiteId();
+        }
+        
+        // Zorg voor drive ID
+        if (driveId == null || driveId.trim().isEmpty()) {
+            driveId = getDriveId();
         }
     }
     
@@ -126,17 +146,20 @@ public class SharePointService {
     }
     
     /**
-     * Controleert of een document beschikbaar is op SharePoint
+     * Controleert of een document beschikbaar is op SharePoint - GEFIXTE VERSIE
      */
     public boolean isDocumentAvailable(String documentUrl) {
         try {
-            ensureValidAccessToken();
+            // Zorg voor complete initialisatie
+            ensureFullInitialization();
             
             String downloadUrl = convertWebUrlToDownloadUrl(documentUrl);
             
             return testDownloadUrl(downloadUrl);
             
         } catch (Exception e) {
+            // Log de fout voor debugging maar return false
+            System.err.println("Document availability check failed: " + e.getMessage());
             return false;
         }
     }
@@ -306,13 +329,14 @@ public class SharePointService {
     }
     
     /**
-     * Converteert SharePoint web URL naar download URL
+     * Converteert SharePoint web URL naar download URL - GEFIXTE VERSIE
      */
-    public String convertWebUrlToDownloadUrl(String webUrl) throws Exception {
+    private String convertWebUrlToDownloadUrl(String webUrl) throws Exception {
         try {
-            // SharePoint geeft ons een _layouts URL met sourcedoc parameter
-            // Bijvoorbeeld: https://site/_layouts/15/Doc.aspx?sourcedoc={GUID}&file=filename.docx
+            // Zorg ervoor dat we geïnitialiseerd zijn
+            ensureFullInitialization();
             
+            // SharePoint geeft ons een _layouts URL met sourcedoc parameter
             if (webUrl.contains("_layouts/15/Doc.aspx") && webUrl.contains("sourcedoc=")) {
                 return convertLayoutsUrlToDownloadUrl(webUrl);
             } else if (webUrl.contains("/Gedeelde documenten/") || webUrl.contains("/Shared Documents/")) {
@@ -325,9 +349,16 @@ public class SharePointService {
             throw new Exception("Fout bij converteren download URL: " + e.getMessage(), e);
         }
     }
+
+    /**
+     * Public methode voor debugging - TOEGEVOEGD
+     */
+    public String convertWebUrlToDownloadUrlPublic(String webUrl) throws Exception {
+        return convertWebUrlToDownloadUrl(webUrl);
+    }
     
     /**
-     * Converteer _layouts URL naar Graph API download URL
+     * Converteer _layouts URL naar Graph API download URL - GEFIXTE VERSIE
      */
     private String convertLayoutsUrlToDownloadUrl(String layoutsUrl) throws Exception {
         // Extract filename from URL
@@ -335,7 +366,7 @@ public class SharePointService {
         if (layoutsUrl.contains("&file=")) {
             String[] parts = layoutsUrl.split("&file=");
             if (parts.length > 1) {
-                filename = parts[1].split("&")[0]; // Neem eerste deel voor volgende &
+                filename = parts[1].split("&")[0];
                 filename = java.net.URLDecoder.decode(filename, "UTF-8");
             }
         }
@@ -344,31 +375,48 @@ public class SharePointService {
             throw new Exception("Kan bestandsnaam niet extraheren uit URL: " + layoutsUrl);
         }
         
-        // Zorg dat we drive ID hebben
-        if (driveId == null) {
-            driveId = getDriveId();
-        }
-        
         // Zoek het bestand in de Functionele Omschrijvingen folder
         return findFileInFunctioneleOmschrijvingen(filename);
     }
     
     /**
-     * Zoek een bestand in de Functionele Omschrijvingen folder
+     * Zoek een bestand in de Functionele Omschrijvingen folder - GEFIXTE VERSIE
      */
     private String findFileInFunctioneleOmschrijvingen(String filename) throws Exception {
         
-        // Probeer eerst direct pad
-        String directPath = "https://graph.microsoft.com/v1.0/drives/" + driveId + 
-                           "/root:/Functionele Omschrijvingen/" + filename + ":/content";
+        // Probeer verschillende locaties in volgorde van waarschijnlijkheid
+        String[] possiblePaths = {
+            // Directe pad
+            "Functionele Omschrijvingen/" + filename,
+            
+            // In project subfolders - probeer veel voorkomende patronen
+            "Functionele Omschrijvingen/999KT5454/" + filename,
+            "Functionele Omschrijvingen/TEST001/" + filename,
+            
+            // Root van Documenten
+            filename
+        };
         
-        if (testDownloadUrl(directPath)) {
-            return directPath;
+        for (String path : possiblePaths) {
+            String downloadUrl = "https://graph.microsoft.com/v1.0/drives/" + driveId + 
+                            "/root:/" + path + ":/content";
+            
+            if (testDownloadUrl(downloadUrl)) {
+                return downloadUrl;
+            }
         }
         
-        // Als dat niet werkt, zoek in subfolders
+        // Als geen directe paden werken, zoek dynamisch in alle subfolders
+        return searchInAllSubfolders(filename);
+    }
+
+    /**
+     * Zoek dynamisch in alle subfolders van Functionele Omschrijvingen
+     */
+    private String searchInAllSubfolders(String filename) throws Exception {
+        
         String searchUrl = "https://graph.microsoft.com/v1.0/drives/" + driveId + 
-                          "/root:/Functionele Omschrijvingen:/children";
+                        "/root:/Functionele Omschrijvingen:/children";
         
         HttpHeaders headers = new HttpHeaders();
         headers.set("Authorization", "Bearer " + accessToken);
@@ -384,10 +432,9 @@ public class SharePointService {
             // Zoek in alle subfolders
             for (JsonNode item : items) {
                 if (item.has("folder")) {
-                    // Dit is een folder, zoek erin
                     String folderName = item.get("name").asText();
                     String subfolderPath = "https://graph.microsoft.com/v1.0/drives/" + driveId + 
-                                         "/root:/Functionele Omschrijvingen/" + folderName + "/" + filename + ":/content";
+                                        "/root:/Functionele Omschrijvingen/" + folderName + "/" + filename + ":/content";
                     
                     if (testDownloadUrl(subfolderPath)) {
                         return subfolderPath;
@@ -395,15 +442,17 @@ public class SharePointService {
                 }
             }
             
-            throw new Exception("Bestand '" + filename + "' niet gevonden in Functionele Omschrijvingen folder");
+            throw new Exception("Bestand '" + filename + "' niet gevonden in Functionele Omschrijvingen folder of subfolders");
             
+        } catch (RestClientException restEx) {
+            throw new Exception("Fout bij zoeken naar bestand - mogelijk authenticatie probleem: " + restEx.getMessage(), restEx);
         } catch (Exception e) {
             throw new Exception("Fout bij zoeken naar bestand: " + e.getMessage(), e);
         }
     }
     
     /**
-     * Test of een download URL werkt
+     * Test of een download URL werkt - GEFIXTE VERSIE met betere error handling
      */
     @SuppressWarnings("UseSpecificCatch")
     private boolean testDownloadUrl(String downloadUrl) {
@@ -416,7 +465,10 @@ public class SharePointService {
                 downloadUrl, HttpMethod.HEAD, request, String.class);
             
             return response.getStatusCode().is2xxSuccessful();
+            
         } catch (Exception e) {
+            // Log voor debugging maar return false
+            System.err.println("Test download URL failed for: " + downloadUrl + " - " + e.getMessage());
             return false;
         }
     }
@@ -462,5 +514,24 @@ public class SharePointService {
             return String.join("/", java.util.Arrays.copyOfRange(parts, 1, parts.length));
         }
         return "";
+    }
+
+    public void ensureValidAccessTokenPublic() throws Exception {
+        ensureValidAccessToken();
+    }
+
+    /**
+     * Debug methode om initialisatie status te checken
+     */
+    public String getInitializationStatus() {
+        StringBuilder status = new StringBuilder();
+        status.append("=== SHAREPOINT SERVICE STATUS ===\n");
+        status.append("Access Token: ").append(accessToken != null && !accessToken.isEmpty() ? "Present" : "Missing").append("\n");
+        status.append("Token Expiry: ").append(tokenExpiry != null ? tokenExpiry.toString() : "Not set").append("\n");
+        status.append("Site ID: ").append(siteId != null ? siteId : "null").append("\n");
+        status.append("Drive ID: ").append(driveId != null ? driveId : "null").append("\n");
+        status.append("Site URL Config: ").append(siteUrl != null ? siteUrl : "null").append("\n");
+        status.append("Library Name: ").append(libraryName != null ? libraryName : "null").append("\n");
+        return status.toString();
     }
 }
