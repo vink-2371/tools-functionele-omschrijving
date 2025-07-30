@@ -323,112 +323,73 @@ public class ProjectController {
 
     // Tijdelijke debug endpoint - voeg toe aan ProjectController
 
-    @GetMapping("/{id}/debug-download")
-    public ResponseEntity<String> debugDownload(@PathVariable Long id) {
+    @GetMapping("/{id}/debug-final")
+    public ResponseEntity<String> debugFinal(@PathVariable Long id) {
         StringBuilder debug = new StringBuilder();
         
         try {
-            debug.append("=== DOWNLOAD DEBUG INFO V3 ===\n\n");
+            debug.append("=== FINALE SIMPELE TEST ===\n\n");
             
-            // Stap 0: SharePoint Service Status Check
-            debug.append("0. SHAREPOINT SERVICE STATUS:\n");
-            try {
-                String serviceStatus = sharePointService.getInitializationStatus();
-                debug.append(serviceStatus).append("\n");
-            } catch (Exception e) {
-                debug.append("   - Status check gefaald: ").append(e.getMessage()).append("\n\n");
-            }
-            
-            // Stap 1: Project info
             Project project = projectService.vindProjectById(id);
-            debug.append("1. PROJECT INFO:\n");
-            debug.append("   - ID: ").append(project.getId()).append("\n");
-            debug.append("   - Naam: ").append(project.getProjectNaam()).append("\n");
-            debug.append("   - Document gegenereerd: ").append(project.isDocumentGegenereerd()).append("\n");
-            debug.append("   - SharePoint URL: ").append(project.getDocumentSharepointUrl()).append("\n");
-            debug.append("   - Bestandsnaam: ").append(project.getDocumentBestandsnaam()).append("\n\n");
-            
-            if (!project.isDocumentGegenereerd() || project.getDocumentSharepointUrl() == null) {
-                debug.append("❌ STOP: Geen document of URL beschikbaar\n");
-                return ResponseEntity.ok(debug.toString());
-            }
-            
-            // Stap 2: URL Analysis
-            debug.append("2. URL ANALYSE:\n");
             String originalUrl = project.getDocumentSharepointUrl();
-            debug.append("   - Originele URL: ").append(originalUrl).append("\n");
-            debug.append("   - URL Type: ");
-            if (originalUrl.contains("_layouts/15/Doc.aspx")) {
-                debug.append("Layouts URL (viewer link)\n");
-            } else if (originalUrl.contains("/Gedeelde documenten/")) {
-                debug.append("Directe document URL\n");
-            } else {
-                debug.append("Onbekend formaat\n");
-            }
             
-            String filename = project.getDocumentBestandsnaam();
-            debug.append("   - Bestandsnaam: ").append(filename).append("\n\n");
+            debug.append("1. BASIS INFO:\n");
+            debug.append("   - URL: ").append(originalUrl).append("\n");
             
-            // Stap 3: Token & Initialization Test
-            debug.append("3. INITIALISATIE TEST:\n");
-            try {
-                // Test of SharePointService correct kan initialiseren
-                sharePointService.ensureValidAccessTokenPublic(); // Maak deze public of voeg test methode toe
-                debug.append("   - Token initialisatie: SUCCESS\n");
-            } catch (Exception e) {
-                debug.append("   - Token initialisatie GEFAALD: ").append(e.getMessage()).append("\n");
-                debug.append("❌ STOP: Kan niet authenticeren met SharePoint\n");
-                return ResponseEntity.ok(debug.toString());
-            }
-            
-            // Stap 4: Download URL Conversie
-            debug.append("\n4. DOWNLOAD URL CONVERSIE:\n");
-            try {
-                String downloadUrl = sharePointService.convertWebUrlToDownloadUrlPublic(originalUrl);
-                debug.append("   - Geconverteerde URL: ").append(downloadUrl).append("\n");
-                debug.append("   - Conversie: SUCCESS\n");
-            } catch (Exception e) {
-                debug.append("   - Conversie GEFAALD: ").append(e.getMessage()).append("\n");
-                debug.append("❌ STOP: URL conversie probleem\n");
-                return ResponseEntity.ok(debug.toString());
-            }
-            
-            // Stap 5: Beschikbaarheid check
-            debug.append("\n5. BESCHIKBAARHEID CHECK:\n");
-            boolean beschikbaar = sharePointService.isDocumentAvailable(originalUrl);
-            debug.append("   - Document beschikbaar: ").append(beschikbaar).append("\n");
-            
-            if (!beschikbaar) {
-                debug.append("❌ STOP: Document niet beschikbaar\n");
-                debug.append("   Mogelijke oorzaken:\n");
-                debug.append("   - Document wordt nog verwerkt door SharePoint\n");
-                debug.append("   - Bestand staat in onverwachte folder\n");  
-                debug.append("   - Authenticatie probleem bij toegang\n");
-                return ResponseEntity.ok(debug.toString());
-            }
-            
-            // Stap 6: Download test
-            debug.append("\n6. DOWNLOAD TEST:\n");
-            try {
-                byte[] documentBytes = sharePointService.downloadDocument(originalUrl);
-                debug.append("   - Download grootte: ").append(documentBytes != null ? documentBytes.length : "null").append(" bytes\n");
-                
-                if (documentBytes == null || documentBytes.length == 0) {
-                    debug.append("❌ Download resultaat is leeg\n");
-                } else {
-                    debug.append("✅ SUCCESS: Document kan worden gedownload!\n");
-                    debug.append("   - Het probleem zit waarschijnlijk in de browser download flow\n");
+            // Extract GUID
+            String guid = null;
+            if (originalUrl.contains("sourcedoc=")) {
+                String[] parts = originalUrl.split("sourcedoc=");
+                if (parts.length > 1) {
+                    String guidPart = parts[1].split("&")[0];
+                    guidPart = java.net.URLDecoder.decode(guidPart, "UTF-8");
+                    guid = guidPart.replace("{", "").replace("}", "");
                 }
+            }
+            
+            debug.append("   - Extracted GUID: ").append(guid).append("\n\n");
+            
+            if (guid == null) {
+                debug.append("❌ STOP: Geen GUID gevonden\n");
+                return ResponseEntity.ok(debug.toString());
+            }
+            
+            // Test initialisatie
+            sharePointService.ensureValidAccessTokenPublic();
+            String status = sharePointService.getInitializationStatus();
+            String siteId = status.contains("Site ID: ") ? 
+                status.split("Site ID: ")[1].split("\n")[0] : "unknown";
+            
+            debug.append("2. SITE INFO:\n");
+            debug.append("   - Site ID: ").append(siteId).append("\n\n");
+            
+            // Bouw download URL
+            String downloadUrl = "https://graph.microsoft.com/v1.0/sites/" + siteId + "/drive/items/" + guid + "/content";
+            debug.append("3. DOWNLOAD URL:\n");
+            debug.append("   - Direct URL: ").append(downloadUrl).append("\n\n");
+            
+            // Test metadata eerst
+            String metadataUrl = "https://graph.microsoft.com/v1.0/sites/" + siteId + "/drive/items/" + guid;
+            debug.append("4. METADATA TEST:\n");
+            debug.append("   - Metadata URL: ").append(metadataUrl).append("\n");
+            
+            try {
+                boolean available = sharePointService.isDocumentAvailable(originalUrl);
+                debug.append("   - Beschikbaar: ").append(available).append("\n\n");
+                
+                if (available) {
+                    debug.append("✅ SUCCESS: Document zou moeten downloaden!\n");
+                    debug.append("Probeer nu de echte download button.\n");
+                } else {
+                    debug.append("❌ Document niet beschikbaar via metadata check\n");
+                }
+                
             } catch (Exception e) {
-                debug.append("   - Download GEFAALD: ").append(e.getMessage()).append("\n");
+                debug.append("   - Test gefaald: ").append(e.getMessage()).append("\n");
             }
             
         } catch (Exception e) {
-            debug.append("❌ ALGEMENE FOUT: ").append(e.getMessage()).append("\n");
-            StackTraceElement[] stack = e.getStackTrace();
-            if (stack.length > 0) {
-                debug.append("   - Locatie: ").append(stack[0].toString()).append("\n");
-            }
+            debug.append("❌ FOUT: ").append(e.getMessage()).append("\n");
         }
         
         return ResponseEntity.ok(debug.toString());
