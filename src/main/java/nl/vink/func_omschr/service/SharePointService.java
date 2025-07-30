@@ -9,7 +9,6 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -46,15 +45,7 @@ public class SharePointService {
      */
     public String uploadDocument(byte[] documentBytes, String bestandsnaam, String projectNummer) throws Exception {
         
-        ensureValidAccessToken();
-        
-        if (siteId == null) {
-            siteId = getSiteId();
-        }
-        
-        if (driveId == null) {
-            driveId = getDriveId();
-        }
+        ensureFullInitialization();
         
         String folderPath = "Functionele Omschrijvingen/" + projectNummer.replaceAll("[^a-zA-Z0-9-_]", "");
         ensureFolderExists(folderPath);
@@ -63,48 +54,236 @@ public class SharePointService {
     }
     
     /**
-     * Download een document van SharePoint - GEFIXTE VERSIE
+     * Download een document van SharePoint - MULTI-METHODE AANPAK
      */
     public byte[] downloadDocument(String documentUrl) throws Exception {
         // Zorg voor complete initialisatie
         ensureFullInitialization();
         
-        String downloadUrl = convertWebUrlToDownloadUrl(documentUrl);
+        // Probeer verschillende download methodes
+        Exception lastException = null;
         
-        HttpHeaders headers = new HttpHeaders();
-        headers.set("Authorization", "Bearer " + accessToken);
-        
-        HttpEntity<String> request = new HttpEntity<>(headers);
-        
+        // Methode 1: SharePoint REST API via GUID (BESTE OPTIE)
         try {
+            byte[] result = downloadDocumentViaSharePointRest(documentUrl);
+            if (result != null && result.length > 0) {
+                return result;
+            }
+        } catch (Exception e) {
+            lastException = e;
+            System.err.println("SharePoint REST API methode gefaald: " + e.getMessage());
+        }
+        
+        // Methode 2: Graph API via GUID
+        try {
+            String downloadUrl = convertLayoutsUrlToDownloadUrlViaGuid(documentUrl);
+            
+            HttpHeaders headers = new HttpHeaders();
+            headers.set("Authorization", "Bearer " + accessToken);
+            HttpEntity<String> request = new HttpEntity<>(headers);
+            
             ResponseEntity<byte[]> response = restTemplate.exchange(
                 downloadUrl, HttpMethod.GET, request, byte[].class);
             
             if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
                 return response.getBody();
-            } else {
-                throw new Exception("Download gefaald met status: " + response.getStatusCode());
             }
         } catch (Exception e) {
-            throw new Exception("Fout bij downloaden van SharePoint: " + e.getMessage(), e);
+            lastException = e;
+            System.err.println("Graph API GUID methode gefaald: " + e.getMessage());
         }
+        
+        // Methode 3: Direct file access via bekende pad structuur
+        try {
+            String filename = extractFilenameFromUrl(documentUrl);
+            if (filename != null) {
+                byte[] result = downloadViaDirectPath(filename);
+                if (result != null && result.length > 0) {
+                    return result;
+                }
+            }
+        } catch (Exception e) {
+            lastException = e;
+            System.err.println("Direct path methode gefaald: " + e.getMessage());
+        }
+        
+        // Als alle methodes gefaald hebben
+        throw new Exception("Alle download methodes gefaald. Laatste fout: " + 
+                           (lastException != null ? lastException.getMessage() : "Onbekend"));
     }
-
+    
     /**
-     * Zorgt voor complete initialisatie van alle vereiste variabelen
+     * METHODE 1: Download via SharePoint REST API (vaak betrouwbaarder dan Graph API)
      */
-    private void ensureFullInitialization() throws Exception {
-        // Zorg voor geldige access token
+    public byte[] downloadDocumentViaSharePointRest(String documentUrl) throws Exception {
+        
         ensureValidAccessToken();
         
-        // Zorg voor site ID
-        if (siteId == null || siteId.trim().isEmpty()) {
-            siteId = getSiteId();
+        // Extract GUID
+        String guid = extractGuidFromUrl(documentUrl);
+        if (guid == null) {
+            throw new Exception("Kan GUID niet extraheren uit URL: " + documentUrl);
         }
         
-        // Zorg voor drive ID
-        if (driveId == null || driveId.trim().isEmpty()) {
-            driveId = getDriveId();
+        // SharePoint REST API endpoint
+        String restUrl = siteUrl + "/_api/web/getfilebyid('" + guid + "')/$value";
+        
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("Authorization", "Bearer " + accessToken);
+        headers.set("Accept", "application/octet-stream");
+        
+        HttpEntity<String> request = new HttpEntity<>(headers);
+        
+        try {
+            ResponseEntity<byte[]> response = restTemplate.exchange(
+                restUrl, HttpMethod.GET, request, byte[].class);
+            
+            if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+                return response.getBody();
+            } else {
+                throw new Exception("SharePoint REST download gefaald: " + response.getStatusCode());
+            }
+            
+        } catch (Exception e) {
+            throw new Exception("SharePoint REST API fout: " + e.getMessage(), e);
+        }
+    }
+    
+    /**
+     * METHODE 2: Graph API download via GUID
+     */
+    private String convertLayoutsUrlToDownloadUrlViaGuid(String layoutsUrl) throws Exception {
+        
+        // Extract GUID from sourcedoc parameter
+        String guid = extractGuidFromUrl(layoutsUrl);
+        
+        if (guid == null) {
+            throw new Exception("Kan GUID niet extraheren uit URL: " + layoutsUrl);
+        }
+        
+        // Direct via drive items met GUID
+        return "https://graph.microsoft.com/v1.0/drives/" + driveId + "/items/" + guid + "/content";
+    }
+    
+    /**
+     * METHODE 3: Download via direct pad op basis van bestandsnaam
+     */
+    @SuppressWarnings("UseSpecificCatch")
+    private byte[] downloadViaDirectPath(String filename) throws Exception {
+        
+        // Probeer bekende paden waar het bestand zou kunnen staan
+        String[] possiblePaths = {
+            "/drives/" + driveId + "/root:/Functionele Omschrijvingen/" + filename + ":/content",
+            "/drives/" + driveId + "/root:/" + filename + ":/content",
+            "/sites/" + siteId + "/drive/root:/Functionele Omschrijvingen/" + filename + ":/content"
+        };
+        
+        for (String path : possiblePaths) {
+            try {
+                String fullUrl = "https://graph.microsoft.com/v1.0" + path;
+                
+                HttpHeaders headers = new HttpHeaders();
+                headers.set("Authorization", "Bearer " + accessToken);
+                HttpEntity<String> request = new HttpEntity<>(headers);
+                
+                ResponseEntity<byte[]> response = restTemplate.exchange(
+                    fullUrl, HttpMethod.GET, request, byte[].class);
+                
+                if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+                    return response.getBody();
+                }
+                
+            } catch (Exception e) {
+                // Probeer volgende pad
+            }
+        }
+        
+        throw new Exception("Geen direct pad werkte voor bestand: " + filename);
+    }
+    
+    /**
+     * Extraheer GUID uit SharePoint URL
+     */
+    @SuppressWarnings("UseSpecificCatch")
+    private String extractGuidFromUrl(String url) {
+        try {
+            // Zoek naar sourcedoc parameter
+            if (url.contains("sourcedoc=")) {
+                String[] parts = url.split("sourcedoc=");
+                if (parts.length > 1) {
+                    String guidPart = parts[1].split("&")[0]; // Tot volgende parameter
+                    
+                    // URL decode
+                    guidPart = java.net.URLDecoder.decode(guidPart, "UTF-8");
+                    
+                    // Remove {} brackets als aanwezig
+                    guidPart = guidPart.replace("{", "").replace("}", "");
+                    
+                    return guidPart;
+                }
+            }
+            return null;
+        } catch (Exception e) {
+            return null;
+        }
+    }
+    
+    /**
+     * Extraheer bestandsnaam uit verschillende URL formaten
+     */
+    @SuppressWarnings("UseSpecificCatch")
+    private String extractFilenameFromUrl(String url) {
+        // Uit _layouts URL
+        if (url.contains("&file=")) {
+            String[] parts = url.split("&file=");
+            if (parts.length > 1) {
+                try {
+                    return java.net.URLDecoder.decode(parts[1].split("&")[0], "UTF-8");
+                } catch (Exception e) {
+                    return null;
+                }
+            }
+        }
+        
+        // Uit directe URL
+        if (url.contains("/")) {
+            String[] parts = url.split("/");
+            return parts[parts.length - 1];
+        }
+        
+        return null;
+    }
+    
+    /**
+     * Controleert of een document beschikbaar is op SharePoint
+     */
+    public boolean isDocumentAvailable(String documentUrl) {
+        try {
+            // Probeer de REST API methode voor availability check
+            ensureValidAccessToken();
+            
+            String guid = extractGuidFromUrl(documentUrl);
+            if (guid == null) {
+                return false;
+            }
+            
+            // Test SharePoint REST API metadata endpoint
+            String restUrl = siteUrl + "/_api/web/getfilebyid('" + guid + "')";
+            
+            HttpHeaders headers = new HttpHeaders();
+            headers.set("Authorization", "Bearer " + accessToken);
+            headers.set("Accept", "application/json");
+            
+            HttpEntity<String> request = new HttpEntity<>(headers);
+            
+            ResponseEntity<String> response = restTemplate.exchange(
+                restUrl, HttpMethod.GET, request, String.class);
+            
+            return response.getStatusCode().is2xxSuccessful();
+            
+        } catch (Exception e) {
+            System.err.println("Document availability check failed: " + e.getMessage());
+            return false;
         }
     }
     
@@ -112,15 +291,7 @@ public class SharePointService {
      * Download een tekstblok (specifiek voor .docx bestanden uit tekstblok folder)
      */
     public byte[] downloadTextblok(String filename) throws Exception {
-        ensureValidAccessToken();
-        
-        if (siteId == null) {
-            siteId = getSiteId();
-        }
-        
-        if (driveId == null) {
-            driveId = getDriveId();
-        }
+        ensureFullInitialization();
         
         // Tekstblokken staan in: Documenten/Tekstblokken/filename
         String downloadUrl = "https://graph.microsoft.com/v1.0/drives/" + driveId + 
@@ -146,21 +317,20 @@ public class SharePointService {
     }
     
     /**
-     * Controleert of een document beschikbaar is op SharePoint - GEFIXTE VERSIE
+     * Zorgt voor complete initialisatie van alle vereiste variabelen
      */
-    public boolean isDocumentAvailable(String documentUrl) {
-        try {
-            // Zorg voor complete initialisatie
-            ensureFullInitialization();
-            
-            String downloadUrl = convertWebUrlToDownloadUrl(documentUrl);
-            
-            return testDownloadUrl(downloadUrl);
-            
-        } catch (Exception e) {
-            // Log de fout voor debugging maar return false
-            System.err.println("Document availability check failed: " + e.getMessage());
-            return false;
+    private void ensureFullInitialization() throws Exception {
+        // Zorg voor geldige access token
+        ensureValidAccessToken();
+        
+        // Zorg voor site ID
+        if (siteId == null || siteId.trim().isEmpty()) {
+            siteId = getSiteId();
+        }
+        
+        // Zorg voor drive ID
+        if (driveId == null || driveId.trim().isEmpty()) {
+            driveId = getDriveId();
         }
     }
     
@@ -329,175 +499,6 @@ public class SharePointService {
     }
     
     /**
-     * Converteert SharePoint web URL naar download URL - GEFIXTE VERSIE
-     */
-    private String convertWebUrlToDownloadUrl(String webUrl) throws Exception {
-        try {
-            // Zorg ervoor dat we geïnitialiseerd zijn
-            ensureFullInitialization();
-            
-            // SharePoint geeft ons een _layouts URL met sourcedoc parameter
-            if (webUrl.contains("_layouts/15/Doc.aspx") && webUrl.contains("sourcedoc=")) {
-                return convertLayoutsUrlToDownloadUrl(webUrl);
-            } else if (webUrl.contains("/Gedeelde documenten/") || webUrl.contains("/Shared Documents/")) {
-                return convertDirectUrlToDownloadUrl(webUrl);
-            } else {
-                throw new Exception("Onbekend SharePoint URL formaat: " + webUrl);
-            }
-            
-        } catch (Exception e) {
-            throw new Exception("Fout bij converteren download URL: " + e.getMessage(), e);
-        }
-    }
-
-    /**
-     * Public methode voor debugging - TOEGEVOEGD
-     */
-    public String convertWebUrlToDownloadUrlPublic(String webUrl) throws Exception {
-        return convertWebUrlToDownloadUrl(webUrl);
-    }
-    
-    /**
-     * Converteer _layouts URL naar Graph API download URL - GEFIXTE VERSIE
-     */
-    private String convertLayoutsUrlToDownloadUrl(String layoutsUrl) throws Exception {
-        // Extract filename from URL
-        String filename = null;
-        if (layoutsUrl.contains("&file=")) {
-            String[] parts = layoutsUrl.split("&file=");
-            if (parts.length > 1) {
-                filename = parts[1].split("&")[0];
-                filename = java.net.URLDecoder.decode(filename, "UTF-8");
-            }
-        }
-        
-        if (filename == null) {
-            throw new Exception("Kan bestandsnaam niet extraheren uit URL: " + layoutsUrl);
-        }
-        
-        // Zoek het bestand in de Functionele Omschrijvingen folder
-        return findFileInFunctioneleOmschrijvingen(filename);
-    }
-    
-    /**
-     * Zoek een bestand in de Functionele Omschrijvingen folder - GEFIXTE VERSIE
-     */
-    private String findFileInFunctioneleOmschrijvingen(String filename) throws Exception {
-        
-        // Probeer verschillende locaties in volgorde van waarschijnlijkheid
-        String[] possiblePaths = {
-            // Directe pad
-            "Functionele Omschrijvingen/" + filename,
-            
-            // In project subfolders - probeer veel voorkomende patronen
-            "Functionele Omschrijvingen/999KT5454/" + filename,
-            "Functionele Omschrijvingen/TEST001/" + filename,
-            
-            // Root van Documenten
-            filename
-        };
-        
-        for (String path : possiblePaths) {
-            String downloadUrl = "https://graph.microsoft.com/v1.0/drives/" + driveId + 
-                            "/root:/" + path + ":/content";
-            
-            if (testDownloadUrl(downloadUrl)) {
-                return downloadUrl;
-            }
-        }
-        
-        // Als geen directe paden werken, zoek dynamisch in alle subfolders
-        return searchInAllSubfolders(filename);
-    }
-
-    /**
-     * Zoek dynamisch in alle subfolders van Functionele Omschrijvingen
-     */
-    private String searchInAllSubfolders(String filename) throws Exception {
-        
-        String searchUrl = "https://graph.microsoft.com/v1.0/drives/" + driveId + 
-                        "/root:/Functionele Omschrijvingen:/children";
-        
-        HttpHeaders headers = new HttpHeaders();
-        headers.set("Authorization", "Bearer " + accessToken);
-        HttpEntity<String> request = new HttpEntity<>(headers);
-        
-        try {
-            ResponseEntity<String> response = restTemplate.exchange(
-                searchUrl, HttpMethod.GET, request, String.class);
-            
-            JsonNode folderContents = objectMapper.readTree(response.getBody());
-            JsonNode items = folderContents.get("value");
-            
-            // Zoek in alle subfolders
-            for (JsonNode item : items) {
-                if (item.has("folder")) {
-                    String folderName = item.get("name").asText();
-                    String subfolderPath = "https://graph.microsoft.com/v1.0/drives/" + driveId + 
-                                        "/root:/Functionele Omschrijvingen/" + folderName + "/" + filename + ":/content";
-                    
-                    if (testDownloadUrl(subfolderPath)) {
-                        return subfolderPath;
-                    }
-                }
-            }
-            
-            throw new Exception("Bestand '" + filename + "' niet gevonden in Functionele Omschrijvingen folder of subfolders");
-            
-        } catch (RestClientException restEx) {
-            throw new Exception("Fout bij zoeken naar bestand - mogelijk authenticatie probleem: " + restEx.getMessage(), restEx);
-        } catch (Exception e) {
-            throw new Exception("Fout bij zoeken naar bestand: " + e.getMessage(), e);
-        }
-    }
-    
-    /**
-     * Test of een download URL werkt - GEFIXTE VERSIE met betere error handling
-     */
-    @SuppressWarnings("UseSpecificCatch")
-    private boolean testDownloadUrl(String downloadUrl) {
-        try {
-            HttpHeaders headers = new HttpHeaders();
-            headers.set("Authorization", "Bearer " + accessToken);
-            HttpEntity<String> request = new HttpEntity<>(headers);
-            
-            ResponseEntity<String> response = restTemplate.exchange(
-                downloadUrl, HttpMethod.HEAD, request, String.class);
-            
-            return response.getStatusCode().is2xxSuccessful();
-            
-        } catch (Exception e) {
-            // Log voor debugging maar return false
-            System.err.println("Test download URL failed for: " + downloadUrl + " - " + e.getMessage());
-            return false;
-        }
-    }
-    
-    /**
-     * Converteer directe SharePoint URL naar download URL (bestaande methode)
-     */
-    private String convertDirectUrlToDownloadUrl(String webUrl) throws Exception {
-        String decodedUrl = java.net.URLDecoder.decode(webUrl, "UTF-8");
-        
-        String[] urlParts = decodedUrl.split("/Gedeelde documenten/");
-        if (urlParts.length != 2) {
-            urlParts = decodedUrl.split("/Shared Documents/");
-            if (urlParts.length != 2) {
-                throw new Exception("Kan bestandspad niet extraheren uit URL");
-            }
-        }
-        
-        String filePath = urlParts[1];
-        
-        if (driveId == null) {
-            driveId = getDriveId();
-        }
-        
-        return "https://graph.microsoft.com/v1.0/drives/" + driveId + 
-               "/root:/" + filePath + ":/content";
-    }
-    
-    /**
      * Extraheert hostname uit SharePoint URL
      */
     private String extractHostname(String url) {
@@ -515,11 +516,23 @@ public class SharePointService {
         }
         return "";
     }
-
+    
+    // ====== PUBLIC METHODES VOOR DEBUGGING ======
+    
+    /**
+     * Public methode voor debugging - Token check
+     */
     public void ensureValidAccessTokenPublic() throws Exception {
         ensureValidAccessToken();
     }
-
+    
+    /**
+     * Public methode voor debugging - URL conversie
+     */
+    public String convertWebUrlToDownloadUrlPublic(String webUrl) throws Exception {
+        return convertLayoutsUrlToDownloadUrlViaGuid(webUrl);
+    }
+    
     /**
      * Debug methode om initialisatie status te checken
      */
