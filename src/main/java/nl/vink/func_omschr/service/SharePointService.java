@@ -54,7 +54,7 @@ public class SharePointService {
     }
     
     /**
-     * Download een document van SharePoint - SIMPELE GUID AANPAK
+     * Download een document van SharePoint
      */
     public byte[] downloadDocument(String documentUrl) throws Exception {
         ensureFullInitialization();
@@ -62,10 +62,10 @@ public class SharePointService {
         // Extract GUID uit URL
         String guid = extractGuidFromUrl(documentUrl);
         if (guid == null) {
-            throw new Exception("Kan GUID niet extraheren uit URL: " + documentUrl);
+            throw new Exception("Kan GUID niet extraheren uit URL");
         }
         
-        // SIMPEL: Direct download via GUID met Graph API
+        // Direct download via GUID met Graph API
         String downloadUrl = "https://graph.microsoft.com/v1.0/sites/" + siteId + "/drive/items/" + guid + "/content";
         
         HttpHeaders headers = new HttpHeaders();
@@ -73,102 +73,18 @@ public class SharePointService {
         
         HttpEntity<String> request = new HttpEntity<>(headers);
         
-        try {
-            ResponseEntity<byte[]> response = restTemplate.exchange(
-                downloadUrl, HttpMethod.GET, request, byte[].class);
-            
-            if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
-                return response.getBody();
-            } else {
-                throw new Exception("Download gefaald met status: " + response.getStatusCode());
-            }
-        } catch (Exception e) {
-            throw new Exception("Direct GUID download gefaald: " + e.getMessage(), e);
+        ResponseEntity<byte[]> response = restTemplate.exchange(
+            downloadUrl, HttpMethod.GET, request, byte[].class);
+        
+        if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+            return response.getBody();
+        } else {
+            throw new Exception("Document download gefaald");
         }
     }
     
     /**
-     * METHODE 1: Download via SharePoint REST API (vaak betrouwbaarder dan Graph API)
-     */
-    public byte[] downloadDocumentViaSharePointRest(String documentUrl) throws Exception {
-        
-        ensureValidAccessToken();
-        
-        // Extract GUID
-        String guid = extractGuidFromUrl(documentUrl);
-        if (guid == null) {
-            throw new Exception("Kan GUID niet extraheren uit URL: " + documentUrl);
-        }
-        
-        // SharePoint REST API endpoint
-        String restUrl = siteUrl + "/_api/web/getfilebyid('" + guid + "')/$value";
-        
-        HttpHeaders headers = new HttpHeaders();
-        headers.set("Authorization", "Bearer " + accessToken);
-        headers.set("Accept", "application/octet-stream");
-        
-        HttpEntity<String> request = new HttpEntity<>(headers);
-        
-        try {
-            ResponseEntity<byte[]> response = restTemplate.exchange(
-                restUrl, HttpMethod.GET, request, byte[].class);
-            
-            if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
-                return response.getBody();
-            } else {
-                throw new Exception("SharePoint REST download gefaald: " + response.getStatusCode());
-            }
-            
-        } catch (Exception e) {
-            throw new Exception("SharePoint REST API fout: " + e.getMessage(), e);
-        }
-    }
-    
-    /**
-     * METHODE 2: Graph API download via GUID
-     */
-    private String convertLayoutsUrlToDownloadUrlViaGuid(String layoutsUrl) throws Exception {
-        
-        // Extract GUID from sourcedoc parameter
-        String guid = extractGuidFromUrl(layoutsUrl);
-        
-        if (guid == null) {
-            throw new Exception("Kan GUID niet extraheren uit URL: " + layoutsUrl);
-        }
-        
-        // Direct via drive items met GUID
-        return "https://graph.microsoft.com/v1.0/drives/" + driveId + "/items/" + guid + "/content";
-    }
-    
-    /**
-     * Extraheer GUID uit SharePoint URL
-     */
-    @SuppressWarnings("UseSpecificCatch")
-    private String extractGuidFromUrl(String url) {
-        try {
-            // Zoek naar sourcedoc parameter
-            if (url.contains("sourcedoc=")) {
-                String[] parts = url.split("sourcedoc=");
-                if (parts.length > 1) {
-                    String guidPart = parts[1].split("&")[0]; // Tot volgende parameter
-                    
-                    // URL decode
-                    guidPart = java.net.URLDecoder.decode(guidPart, "UTF-8");
-                    
-                    // Remove {} brackets als aanwezig
-                    guidPart = guidPart.replace("{", "").replace("}", "");
-                    
-                    return guidPart;
-                }
-            }
-            return null;
-        } catch (Exception e) {
-            return null;
-        }
-    }
-    
-    /**
-     * Controleert of een document beschikbaar is - SIMPELE VERSIE
+     * Controleert of een document beschikbaar is op SharePoint
      */
     public boolean isDocumentAvailable(String documentUrl) {
         try {
@@ -198,12 +114,11 @@ public class SharePointService {
     }
     
     /**
-     * Download een tekstblok (specifiek voor .docx bestanden uit tekstblok folder)
+     * Download een tekstblok (voor toekomstige functionaliteit)
      */
     public byte[] downloadTextblok(String filename) throws Exception {
         ensureFullInitialization();
         
-        // Tekstblokken staan in: Documenten/Tekstblokken/filename
         String downloadUrl = "https://graph.microsoft.com/v1.0/drives/" + driveId + 
                            "/root:/Tekstblokken/" + filename + ":/content";
         
@@ -212,17 +127,13 @@ public class SharePointService {
         
         HttpEntity<String> request = new HttpEntity<>(headers);
         
-        try {
-            ResponseEntity<byte[]> response = restTemplate.exchange(
-                downloadUrl, HttpMethod.GET, request, byte[].class);
-            
-            if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
-                return response.getBody();
-            } else {
-                throw new Exception("Tekstblok niet gevonden: " + filename);
-            }
-        } catch (Exception e) {
-            throw new Exception("Fout bij ophalen tekstblok '" + filename + "': " + e.getMessage(), e);
+        ResponseEntity<byte[]> response = restTemplate.exchange(
+            downloadUrl, HttpMethod.GET, request, byte[].class);
+        
+        if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+            return response.getBody();
+        } else {
+            throw new Exception("Tekstblok niet gevonden: " + filename);
         }
     }
     
@@ -230,15 +141,12 @@ public class SharePointService {
      * Zorgt voor complete initialisatie van alle vereiste variabelen
      */
     private void ensureFullInitialization() throws Exception {
-        // Zorg voor geldige access token
         ensureValidAccessToken();
         
-        // Zorg voor site ID
         if (siteId == null || siteId.trim().isEmpty()) {
             siteId = getSiteId();
         }
         
-        // Zorg voor drive ID
         if (driveId == null || driveId.trim().isEmpty()) {
             driveId = getDriveId();
         }
@@ -378,7 +286,7 @@ public class SharePointService {
             try {
                 restTemplate.exchange(createUrl, HttpMethod.POST, createRequest, String.class);
             } catch (Exception createEx) {
-                // Folder mogelijk al aangemaakt door concurrent proces, negeer fout
+                // Folder mogelijk al aangemaakt door concurrent proces
             }
         }
     }
@@ -409,6 +317,26 @@ public class SharePointService {
     }
     
     /**
+     * Extraheer GUID uit SharePoint URL
+     */
+    @SuppressWarnings("UseSpecificCatch")
+    private String extractGuidFromUrl(String url) {
+        try {
+            if (url.contains("sourcedoc=")) {
+                String[] parts = url.split("sourcedoc=");
+                if (parts.length > 1) {
+                    String guidPart = parts[1].split("&")[0];
+                    guidPart = java.net.URLDecoder.decode(guidPart, "UTF-8");
+                    return guidPart.replace("{", "").replace("}", "");
+                }
+            }
+            return null;
+        } catch (Exception e) {
+            return null;
+        }
+    }
+    
+    /**
      * Extraheert hostname uit SharePoint URL
      */
     private String extractHostname(String url) {
@@ -425,36 +353,5 @@ public class SharePointService {
             return String.join("/", java.util.Arrays.copyOfRange(parts, 1, parts.length));
         }
         return "";
-    }
-    
-    // ====== PUBLIC METHODES VOOR DEBUGGING ======
-    
-    /**
-     * Public methode voor debugging - Token check
-     */
-    public void ensureValidAccessTokenPublic() throws Exception {
-        ensureValidAccessToken();
-    }
-    
-    /**
-     * Public methode voor debugging - URL conversie
-     */
-    public String convertWebUrlToDownloadUrlPublic(String webUrl) throws Exception {
-        return convertLayoutsUrlToDownloadUrlViaGuid(webUrl);
-    }
-    
-    /**
-     * Debug methode om initialisatie status te checken
-     */
-    public String getInitializationStatus() {
-        StringBuilder status = new StringBuilder();
-        status.append("=== SHAREPOINT SERVICE STATUS ===\n");
-        status.append("Access Token: ").append(accessToken != null && !accessToken.isEmpty() ? "Present" : "Missing").append("\n");
-        status.append("Token Expiry: ").append(tokenExpiry != null ? tokenExpiry.toString() : "Not set").append("\n");
-        status.append("Site ID: ").append(siteId != null ? siteId : "null").append("\n");
-        status.append("Drive ID: ").append(driveId != null ? driveId : "null").append("\n");
-        status.append("Site URL Config: ").append(siteUrl != null ? siteUrl : "null").append("\n");
-        status.append("Library Name: ").append(libraryName != null ? libraryName : "null").append("\n");
-        return status.toString();
     }
 }

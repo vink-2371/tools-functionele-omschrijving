@@ -235,45 +235,32 @@ public class ProjectController {
     }
     
     /**
-     * Download document met uitgebreide feedback
+     * Download document
      */
     @GetMapping("/{id}/document-download")
     public ResponseEntity<?> downloadDocument(@PathVariable Long id) {
         
         try {
-            // Stap 1: Project ophalen
             Project project = projectService.vindProjectById(id);
             
-            // Stap 2: Valideren of document bestaat
             if (!project.isDocumentGegenereerd() || project.getDocumentSharepointUrl() == null) {
                 return createErrorRedirect(id, "Er is nog geen document gegenereerd voor dit project.");
             }
             
             String documentUrl = project.getDocumentSharepointUrl();
             
-            // Stap 3: Controleren of document beschikbaar is
             if (!sharePointService.isDocumentAvailable(documentUrl)) {
                 return createWarningRedirect(id, 
                     "Het document wordt nog verwerkt door SharePoint. " +
                     "Dit kan enkele minuten duren na het genereren. Probeer het opnieuw.");
             }
             
-            // Stap 4: Document downloaden van SharePoint
-            byte[] documentBytes;
-            try {
-                documentBytes = sharePointService.downloadDocument(documentUrl);
-            } catch (Exception downloadEx) {
-                return createErrorRedirect(id, 
-                    "Fout bij ophalen document van SharePoint: " + downloadEx.getMessage() + 
-                    ". Het document is mogelijk nog niet volledig verwerkt.");
-            }
+            byte[] documentBytes = sharePointService.downloadDocument(documentUrl);
             
-            // Stap 5: Valideren download
             if (documentBytes == null || documentBytes.length == 0) {
                 return createErrorRedirect(id, "Het gedownloade document is leeg. Probeer het document opnieuw te genereren.");
             }
             
-            // Stap 6: Bestandsnaam bepalen
             String filename = project.getDocumentBestandsnaam();
             if (filename == null || filename.isEmpty()) {
                 filename = "Functionele_Omschrijving_" + 
@@ -281,7 +268,6 @@ public class ProjectController {
                         ".docx";
             }
             
-            // Stap 7: Document naar browser sturen
             return ResponseEntity.ok()
                     .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
                     .header(HttpHeaders.CONTENT_TYPE, "application/vnd.openxmlformats-officedocument.wordprocessingml.document")
@@ -292,10 +278,8 @@ public class ProjectController {
                     .body(documentBytes);
             
         } catch (Exception e) {
-            // Algemene fout afhandeling
             return createErrorRedirect(id, 
-                "Onverwachte fout bij downloaden: " + e.getMessage() + 
-                ". Neem contact op met de beheerder als dit probleem aanhoudt.");
+                "Fout bij downloaden document: " + e.getMessage());
         }
     }
 
@@ -318,81 +302,4 @@ public class ProjectController {
                     java.net.URLEncoder.encode(message, java.nio.charset.StandardCharsets.UTF_8))
                 .build();
     }
-
-
-
-    // Tijdelijke debug endpoint - voeg toe aan ProjectController
-
-    @GetMapping("/{id}/debug-final")
-    public ResponseEntity<String> debugFinal(@PathVariable Long id) {
-        StringBuilder debug = new StringBuilder();
-        
-        try {
-            debug.append("=== FINALE SIMPELE TEST ===\n\n");
-            
-            Project project = projectService.vindProjectById(id);
-            String originalUrl = project.getDocumentSharepointUrl();
-            
-            debug.append("1. BASIS INFO:\n");
-            debug.append("   - URL: ").append(originalUrl).append("\n");
-            
-            // Extract GUID
-            String guid = null;
-            if (originalUrl.contains("sourcedoc=")) {
-                String[] parts = originalUrl.split("sourcedoc=");
-                if (parts.length > 1) {
-                    String guidPart = parts[1].split("&")[0];
-                    guidPart = java.net.URLDecoder.decode(guidPart, "UTF-8");
-                    guid = guidPart.replace("{", "").replace("}", "");
-                }
-            }
-            
-            debug.append("   - Extracted GUID: ").append(guid).append("\n\n");
-            
-            if (guid == null) {
-                debug.append("❌ STOP: Geen GUID gevonden\n");
-                return ResponseEntity.ok(debug.toString());
-            }
-            
-            // Test initialisatie
-            sharePointService.ensureValidAccessTokenPublic();
-            String status = sharePointService.getInitializationStatus();
-            String siteId = status.contains("Site ID: ") ? 
-                status.split("Site ID: ")[1].split("\n")[0] : "unknown";
-            
-            debug.append("2. SITE INFO:\n");
-            debug.append("   - Site ID: ").append(siteId).append("\n\n");
-            
-            // Bouw download URL
-            String downloadUrl = "https://graph.microsoft.com/v1.0/sites/" + siteId + "/drive/items/" + guid + "/content";
-            debug.append("3. DOWNLOAD URL:\n");
-            debug.append("   - Direct URL: ").append(downloadUrl).append("\n\n");
-            
-            // Test metadata eerst
-            String metadataUrl = "https://graph.microsoft.com/v1.0/sites/" + siteId + "/drive/items/" + guid;
-            debug.append("4. METADATA TEST:\n");
-            debug.append("   - Metadata URL: ").append(metadataUrl).append("\n");
-            
-            try {
-                boolean available = sharePointService.isDocumentAvailable(originalUrl);
-                debug.append("   - Beschikbaar: ").append(available).append("\n\n");
-                
-                if (available) {
-                    debug.append("✅ SUCCESS: Document zou moeten downloaden!\n");
-                    debug.append("Probeer nu de echte download button.\n");
-                } else {
-                    debug.append("❌ Document niet beschikbaar via metadata check\n");
-                }
-                
-            } catch (Exception e) {
-                debug.append("   - Test gefaald: ").append(e.getMessage()).append("\n");
-            }
-            
-        } catch (Exception e) {
-            debug.append("❌ FOUT: ").append(e.getMessage()).append("\n");
-        }
-        
-        return ResponseEntity.ok(debug.toString());
-    }
-
 }
