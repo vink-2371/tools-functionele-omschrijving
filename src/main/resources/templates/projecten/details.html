@@ -224,11 +224,10 @@
                                     Document Genereren
                                 </button>
                             </form>
-                            
                             <button th:if="${project.documentGegenereerd}"
                                     type="button"
                                     class="btn btn-success btn-lg w-100"
-                                    onclick="downloadDocument()"
+                                    th:onclick="'downloadDocument(' + ${project.id} + ')'"
                                     id="downloadBtn">
                                 <i class="fas fa-download me-2"></i>
                                 Document Downloaden
@@ -273,7 +272,7 @@
     
     <!-- Auto-hide success messages -->
     <script>
-        function downloadDocument() {
+        function downloadDocument(projectId) {
             const btn = document.getElementById('downloadBtn');
             const originalHtml = btn.innerHTML;
             
@@ -281,8 +280,7 @@
             btn.disabled = true;
             btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Document wordt gedownload...';
             
-            // Start download
-            const projectId = /*[[${project.id}]]*/ '';
+            // Start download met correct project ID
             const downloadUrl = `/projecten/${projectId}/document-download`;
             
             // Maak verborgen link voor download
@@ -301,9 +299,7 @@
             
             // Toon success message
             setTimeout(() => {
-                if (!document.querySelector('.alert-danger')) {
-                    showSuccessMessage('Document download gestart! Het bestand zou moeten verschijnen in je downloads.');
-                }
+                showSuccessMessage('Document download gestart! Het bestand wordt gedownload naar je Downloads folder.');
             }, 1000);
         }
 
